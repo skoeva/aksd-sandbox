@@ -4,7 +4,7 @@
   "description": "Easy-to-use and extensible Kubernetes web UI",
   "main": "electron/main.js",
   "homepage": "https://github.com/kubernetes-sigs/headlamp/#readme",
-  "productName": "AKS Desktop",
+  "productName": "AKS desktop",
   "engines": {
     "npm": ">=10.0.0",
     "node": ">=20.11.1"
@@ -27,7 +27,7 @@
     "tsc": "tsc"
   },
   "build": {
-    "appId": "com.microsoft.Headlamp",
+    "appId": "com.microsoft.aks-dekstop",
     "beforeBuild": "./scripts/build-backend.js",
     "afterPack": "./scripts/after-pack.js",
     "asar": false,
@@ -73,7 +73,7 @@
           ]
         }
       ],
-      "maintainer": "Kinvolk <hello@kinvolk.io>",
+      "maintainer": "Microsoft",
       "category": "Network",
       "extraResources": [
         {
@@ -82,7 +82,7 @@
       ]
     },
     "mac": {
-      "appId": "com.microsoft.Headlamp",
+      "appId": "com.microsoft.aks-dekstop",
       "sign": "./mac/scripts/codeSign.js",
       "target": [
         {
@@ -146,14 +146,13 @@
     "publish": {
       "provider": "github",
       "repo": "headlamp",
-      "owner": "kinvolk"
+      "owner": "Microsoft"
     },
     "extends": null
   },
   "keywords": [],
   "author": {
-    "name": "Kinvolk",
-    "email": "hello@kinvolk.io"
+    "name": "Microsoft"
   },
   "prettier": "@headlamp-k8s/eslint-config/prettier-config",
   "devDependencies": {
