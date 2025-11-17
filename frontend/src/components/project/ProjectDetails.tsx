@@ -112,8 +112,8 @@ function ProjectOverview({
     throw new Error('Missing ProjectDetailsContext');
   }
   const { setSelectedCategoryName, setSelectedTab } = detailsContext;
-  const additionalOverviewSections = useTypedSelector(state => state.projects.overviewSections)
-  
+  const additionalOverviewSections = useTypedSelector(state => state.projects.overviewSections);
+
   const [projectSections, setProjectSections] = useState<ProjectOverviewSection[]>([]);
 
   // Load custom sections
