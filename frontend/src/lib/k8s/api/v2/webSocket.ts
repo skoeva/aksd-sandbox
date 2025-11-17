@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+// Portions (c) Microsoft Corp.
+
 import { useCallback, useEffect, useMemo } from 'react';
 import { getAppUrl } from '../../../../helpers/getAppUrl';
 import { findKubeconfigByClusterName } from '../../../../stateless/findKubeconfigByClusterName';
