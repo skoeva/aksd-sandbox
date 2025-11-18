@@ -1821,7 +1821,7 @@ async function startElecron() {
       'register-aks-cluster',
       async (
         event,
-        data: { subscriptionId: string; resourceGroup: string; clusterName: string }
+        data: { subscriptionId: string; resourceGroup: string; clusterName: string, isAzureRBACEnabled: boolean }
       ) => {
         const { registerAKSCluster } = await import('./aks-cluster');
         const resourcesDir = isDev
@@ -1831,6 +1831,7 @@ async function startElecron() {
           data.subscriptionId,
           data.resourceGroup,
           data.clusterName,
+          data.isAzureRBACEnabled,
           isDev,
           resourcesDir
         );
