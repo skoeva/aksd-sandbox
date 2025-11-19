@@ -244,7 +244,12 @@ export async function registerAKSCluster(
       };
     }
 
-    const result = await desktopApi.registerAKSCluster(subscriptionId, resourceGroup, clusterName, clusterInfo.cluster?.isAzureRBACEnabled);
+    const result = await desktopApi.registerAKSCluster(
+      subscriptionId,
+      resourceGroup,
+      clusterName,
+      clusterInfo.cluster?.isAzureRBACEnabled
+    );
 
     console.log('[AKS] Registration result:', result);
     return result;

@@ -279,7 +279,11 @@ function CreateAKSProject() {
               // Roles to assign: the selected role and the default namespace user role
               // Note: Platform-specific quoting is handled in createNamespaceRoleAssignment
               // Namespace contributor is needed to allow users to delete the managed namespace
-              const rolesToAssign = [azureRole, 'Azure Kubernetes Service Namespace User','Azure Kubernetes Service Namespace Contributor'];
+              const rolesToAssign = [
+                azureRole,
+                'Azure Kubernetes Service Namespace User',
+                'Azure Kubernetes Service Namespace Contributor',
+              ];
 
               // Create role assignments for both roles
               const roleAssignmentResults = [];

@@ -2338,8 +2338,7 @@ export async function createNamespaceRoleAssignment(options: {
     (typeof navigator !== 'undefined' &&
       (navigator.platform.toLowerCase().includes('win') ||
         navigator.userAgent.toLowerCase().includes('windows'))) ||
-    (typeof window !== 'undefined' &&
-      (window as any).process?.platform === 'win32') ||
+    (typeof window !== 'undefined' && (window as any).process?.platform === 'win32') ||
     (typeof process !== 'undefined' && process.platform === 'win32');
 
   // On Windows, add quotes back for role names with spaces (required for shell execution)

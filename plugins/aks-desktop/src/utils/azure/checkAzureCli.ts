@@ -23,9 +23,7 @@ export async function checkAzureCliAndAksPreview(): Promise<{
   const suggestions: string[] = [];
 
   // Check Azure CLI version using JSON output
-  const { stdout: versionStdout, stderr: versionStderr } = await runCommandAsync('az', [
-    'version',
-  ]);
+  const { stdout: versionStdout, stderr: versionStderr } = await runCommandAsync('az', ['version']);
   if (
     versionStderr &&
     (versionStderr.includes('not found') || versionStderr.includes('command not found'))
@@ -37,7 +35,7 @@ export async function checkAzureCliAndAksPreview(): Promise<{
     try {
       const versionData = JSON.parse(versionStdout);
       cliInstalled = true;
-      
+
       // Extract version from JSON
       if (versionData['azure-cli']) {
         cliVersion = versionData['azure-cli'];
@@ -58,7 +56,9 @@ export async function checkAzureCliAndAksPreview(): Promise<{
       if (versionData.extensions && versionData.extensions['aks-preview']) {
         aksPreviewInstalled = true;
       } else {
-        suggestions.push('Install the az aks-preview extension: az extension add --name aks-preview');
+        suggestions.push(
+          'Install the az aks-preview extension: az extension add --name aks-preview'
+        );
       }
     } catch (parseError) {
       // Fallback if JSON parsing fails
