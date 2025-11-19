@@ -220,6 +220,7 @@
   "Create {{ name }}": "{{ name }} உருவாக்கு",
   "Toggle fullscreen": "முழுத்திரை நிலையை மாற்று",
   "Unable to open GitHub. Please check your popup blocker settings or copy the error details manually.": "",
+  "Your AKS desktop ran into a problem!": "",
   "Head back <1>home</1>.": "<1>முகப்புக்கு</1> திரும்பிச் செல்லவும்.",
   "Error Details": "பிழை விவரங்கள்",
   "Copied to clipboard": "",

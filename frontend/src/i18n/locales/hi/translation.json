@@ -220,6 +220,7 @@
   "Create {{ name }}": "{{ name }} बनाएँ",
   "Toggle fullscreen": "फुलस्क्रीन टॉगल करें",
   "Unable to open GitHub. Please check your popup blocker settings or copy the error details manually.": "",
+  "Your AKS desktop ran into a problem!": "",
   "Head back <1>home</1>.": "<1>होम</1> पर वापस जाएँ।",
   "Error Details": "त्रुटि विवरण",
   "Copied to clipboard": "",

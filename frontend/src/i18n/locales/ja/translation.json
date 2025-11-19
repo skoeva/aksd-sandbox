@@ -220,6 +220,7 @@
   "Create {{ name }}": "{{ name }} の作成",
   "Toggle fullscreen": "全画面表示の切り替え",
   "Unable to open GitHub. Please check your popup blocker settings or copy the error details manually.": "",
+  "Your AKS desktop ran into a problem!": "",
   "Head back <1>home</1>.": "<1>ホーム</1>に戻る。",
   "Error Details": "エラーの詳細",
   "Copied to clipboard": "",

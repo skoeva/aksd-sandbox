@@ -220,6 +220,7 @@
   "Create {{ name }}": "新增 {{ name }}",
   "Toggle fullscreen": "切换全屏幕",
   "Unable to open GitHub. Please check your popup blocker settings or copy the error details manually.": "",
+  "Your AKS desktop ran into a problem!": "",
   "Head back <1>home</1>.": "返回<1>首页</1>。",
   "Error Details": "错误详情",
   "Copied to clipboard": "",
