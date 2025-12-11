@@ -43,6 +43,7 @@ interface ManagedNamespace {
   clusterName: string;
   resourceGroup: string;
   subscriptionId: string;
+  isManagedNamespace: boolean; // Track if this is an AKS managed namespace
 }
 
 interface ImportSelection {
@@ -129,6 +130,8 @@ export default function ImportAKSProjects() {
     try {
       const mergedClusterNames = Object.values(clustersConf || {}).map((c: any) => c.name);
 
+      // Fetch AKS managed namespaces from the subscription
+      // These are namespaces created and managed by AKS, not regular Kubernetes namespaces
       const namespacesData = await getManagedNamespacesForSubscription(selectedSubscription.id);
 
       if (namespacesData.length === 0) {
@@ -177,6 +180,7 @@ export default function ImportAKSProjects() {
                   clusterName: ns.clusterName,
                   resourceGroup: ns.resourceGroup,
                   subscriptionId: selectedSubscription.id,
+                  isManagedNamespace: true, // All namespaces from getManagedNamespacesForSubscription are managed
                 },
                 projectName: labels[PROJECT_ID_LABEL], // Use existing project ID
                 selected: true, // Select all by default
@@ -254,8 +258,27 @@ export default function ImportAKSProjects() {
       );
 
       // Step 1: Merge/register the cluster ONCE per unique cluster
+      // If it's a managed namespace, use namespace-scoped credentials
       try {
-        const registerResult = await registerAKSCluster(subscriptionId, resourceGroup, clusterName);
+        const firstNamespaceInfo = namespacesInCluster[0].namespace;
+        const managedNamespace = firstNamespaceInfo.isManagedNamespace
+          ? firstNamespaceInfo.name
+          : undefined;
+
+        console.log(
+          '[Import] Registering cluster:',
+          clusterName,
+          managedNamespace
+            ? `with managed namespace: ${managedNamespace}`
+            : 'without managed namespace'
+        );
+
+        const registerResult = await registerAKSCluster(
+          subscriptionId,
+          resourceGroup,
+          clusterName,
+          managedNamespace
+        );
 
         if (!registerResult.success) {
           // If cluster merge fails, mark all namespaces from this cluster as failed
