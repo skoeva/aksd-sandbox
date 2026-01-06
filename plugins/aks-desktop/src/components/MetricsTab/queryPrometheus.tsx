@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the Apache 2.0.
 
-import { runCommandWithOutput } from '../../utils/kubernetes';
+import { runCommandWithOutput } from '../../utils/kubernetes/cli-runner';
 
 // Helper to query Prometheus
 export async function queryPrometheus(

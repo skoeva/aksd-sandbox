@@ -2,7 +2,7 @@
 // Licensed under the Apache 2.0.
 
 import { configureAzureCliExtensions } from '../../utils/azure/az-cli';
-import { runCommandWithOutput } from '../../utils/kubernetes';
+import { runCommandWithOutput } from '../../utils/kubernetes/cli-runner';
 
 // Helper to get Prometheus endpoint
 export async function getPrometheusEndpoint(

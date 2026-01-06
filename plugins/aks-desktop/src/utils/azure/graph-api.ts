@@ -5,7 +5,7 @@ import { ResourceGraphClient } from '@azure/arm-resourcegraph';
 import { QueryRequest } from '@azure/arm-resourcegraph/esm/models/index';
 import { SubscriptionClient } from '@azure/arm-subscriptions';
 import { AzureCliCredential } from '@azure/identity';
-import { AzureCluster, AzureResourceGroup, AzureSubscription, AzureTenant } from './client';
+import type { AzureCluster, AzureResourceGroup, AzureSubscription, AzureTenant } from './types';
 
 // Initialize clients with Azure CLI credentials
 const getResourceGraphClient = () => {
