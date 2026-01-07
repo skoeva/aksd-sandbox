@@ -51,9 +51,13 @@ console.warn = (...args) => {
 };
 
 console.error = (...args) => {
+  const message = args.join(' ');
   if (
-    args[0]?.includes?.('`ReactDOMTestUtils.act` is deprecated') ||
-    args[0]?.includes?.('React.act is not a function')
+    message.includes('`ReactDOMTestUtils.act` is deprecated') ||
+    message.includes('React.act is not a function') ||
+    // MUI TouchRipple causes act() warnings that are safe to ignore
+    (message.includes('not wrapped in act') &&
+      (message.includes('TouchRipple') || message.includes('ButtonBase')))
   ) {
     return;
   }
