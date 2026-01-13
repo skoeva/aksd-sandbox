@@ -18,8 +18,8 @@ import {
   getManagedNamespaces,
   updateManagedNamespace,
 } from '../../utils/azure/az-cli';
-import ComputeStep from '../CreateAKSProject/components/ComputeStep';
-import NetworkingStep from '../CreateAKSProject/components/NetworkingStep';
+import { ComputeStep } from '../CreateAKSProject/components/ComputeStep';
+import { NetworkingStep } from '../CreateAKSProject/components/NetworkingStep';
 import { DEFAULT_FORM_DATA, type FormData, type ValidationState } from '../CreateAKSProject/types';
 import { validateComputeQuota, validateNetworkingPolicies } from '../CreateAKSProject/validators';
 

@@ -4,13 +4,7 @@
 // Pure validation functions for CreateAKSProject component
 // These functions are easily testable and don't depend on React
 
-import {
-  EmailValidationResult,
-  FormData,
-  FormValidationResult,
-  UserAssignment,
-  ValidationResult,
-} from './types';
+import { FormData, FormValidationResult, UserAssignment, ValidationResult } from './types';
 
 /**
  * Validates email format using a comprehensive regex
@@ -22,29 +16,6 @@ export const isValidEmail = (email: string): boolean => {
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email.trim());
-};
-
-/**
- * Validates email and returns detailed result
- */
-export const validateEmail = (email: string): EmailValidationResult => {
-  const trimmedEmail = email.trim();
-
-  if (!trimmedEmail) {
-    return {
-      isValid: true, // Empty email is valid (optional field)
-      isValidEmail: true,
-      errors: [],
-    };
-  }
-
-  const isValidEmailFormat = isValidEmail(trimmedEmail);
-
-  return {
-    isValid: isValidEmailFormat,
-    isValidEmail: isValidEmailFormat,
-    errors: isValidEmailFormat ? [] : ['Please enter a valid email address'],
-  };
 };
 
 /**
@@ -355,17 +326,6 @@ export const validateStep = (
 };
 
 /**
- * Sanitizes project name to be Kubernetes namespace compatible
- */
-export const sanitizeProjectName = (name: string): string => {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9-]/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .substring(0, 63);
-};
-
-/**
  * Formats CPU value for display
  */
 export const formatCpuValue = (value: number): string => {
@@ -383,37 +343,4 @@ export const formatMemoryValue = (value: number): string => {
     return `${(value / 1024).toFixed(1)} GiB`;
   }
   return `${value} MiB`;
-};
-
-/**
- * Validates if a string is a valid Kubernetes resource name
- */
-export const isValidKubernetesName = (name: string): boolean => {
-  if (!name || typeof name !== 'string') {
-    return false;
-  }
-
-  const trimmed = name.trim();
-
-  // Check if the input has leading or trailing whitespace
-  if (name !== trimmed) {
-    return false;
-  }
-
-  // Must be 1-63 characters
-  if (trimmed.length < 1 || trimmed.length > 63) {
-    return false;
-  }
-
-  // Must start and end with alphanumeric character
-  if (!/^[a-z0-9]/.test(trimmed) || !/[a-z0-9]$/.test(trimmed)) {
-    return false;
-  }
-
-  // Can contain lowercase letters, numbers, and hyphens
-  if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(trimmed)) {
-    return false;
-  }
-
-  return true;
 };

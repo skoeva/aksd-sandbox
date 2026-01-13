@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import YAML from 'yaml';
-import Breadcrumb from '../CreateAKSProject/components/Breadcrumb';
+import { Breadcrumb } from '../CreateAKSProject/components/Breadcrumb';
 import ConfigureContainer from './components/ConfigureContainer';
 import ConfigureYAML from './components/ConfigureYAML';
 import Deploy from './components/Deploy';

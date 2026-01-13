@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the Apache 2.0.
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import { getLoginStatus } from '../utils/azure/az-cli';
 
@@ -82,25 +82,4 @@ export function useAzureAuth(redirectToLogin = false): AzureAuthStatus {
   };
 
   return authStatus;
-}
-
-/**
- * Higher-order component to protect routes that require Azure authentication
- */
-export function withAzureAuth<P extends object>(
-  Component: React.ComponentType<P>
-): React.ComponentType<P> {
-  return (props: P) => {
-    const authStatus = useAzureAuth(true);
-
-    if (authStatus.isChecking) {
-      return null; // Or a loading spinner
-    }
-
-    if (!authStatus.isLoggedIn) {
-      return null; // Will redirect via the hook
-    }
-
-    return <Component {...props} />;
-  };
 }

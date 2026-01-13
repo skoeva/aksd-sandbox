@@ -169,10 +169,6 @@ export interface ValidationResult {
   fieldErrors?: Record<string, string[]>;
 }
 
-export interface EmailValidationResult extends ValidationResult {
-  isValidEmail: boolean;
-}
-
 export interface FormValidationResult extends ValidationResult {
   fieldErrors: Record<string, string[]>;
 }
