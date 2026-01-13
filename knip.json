@@ -7,7 +7,11 @@
     "jest-environment-jsdom",
     "babel-jest",
     "ts-jest",
-    "identity-obj-proxy"
+    "identity-obj-proxy",
+    "tsx"
+  ],
+  "ignoreBinaries": [
+    "make"
   ],
   "ignoreIssues": {
     "build/setup-plugins.ts": [
@@ -15,6 +19,30 @@
     ],
     "build/verify-bundled-tools.ts": [
       "files"
+    ],
+    "build/download-az-cli.ts": [
+      "files"
+    ],
+    "build/setup-external-tools.ts": [
+      "files"
+    ],
+    "plugins/aks-desktop/src/**/*.d.ts": [
+      "files"
+    ],
+    "plugins/aks-desktop/src/setupTests.ts": [
+      "files"
+    ],
+    "plugins/aks-desktop/test-config/setup/setupTests.ts": [
+      "files"
+    ],
+    "plugins/aks-desktop/src/utils/test/*.test.ts": [
+      "files"
+    ],
+    "plugins/aks-desktop/src/utils/test/run-tests.js": [
+      "files"
+    ],
+    "**/*": [
+      "unlisted"
     ]
   },
   "project": [
