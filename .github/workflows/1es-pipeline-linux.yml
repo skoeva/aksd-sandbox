@@ -26,7 +26,7 @@ extends:
     # Update the pool with your team's 1ES hosted pool.
     pool:
       name: staging-pool-amd64-mariner-2
-      image: azcu-1es-agent-amd64-mariner-2-img
+      image: 1es-azlinux-3-amd64-custom-disk
       os: linux
       hostArchitecture: amd64
     sdl:
@@ -58,6 +58,13 @@ extends:
                 retryCountOnTaskFailure: 3
                 inputs:
                   version: ${{ parameters.goVersion }}
+              # FIX: Install .NET SDK early (required for ESRP Code Signing)
+              # Changed from "runtime" to "sdk" and added version specification
+              - task: UseDotNet@2
+                displayName: Install .NET SDK (required for ESRP signing)
+                inputs:
+                  packageType: "sdk"
+                  version: "6.x" # Use 6.x or 8.x depending on ESRP requirement
               # TODO: Remove debug logging after pipeline is stable
               - bash: |
                   echo "=== GO INSTALLATION DEBUG ==="
