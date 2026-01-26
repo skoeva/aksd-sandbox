@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the Apache 2.0.
 
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import React from 'react';
 import {
@@ -48,6 +49,8 @@ interface ScalingChartProps {
  * Displays the scaling metrics chart (replicas and CPU over time)
  */
 export const ScalingChart: React.FC<ScalingChartProps> = ({ chartData, loading, error }) => {
+  const { t } = useTranslation();
+
   if (loading) {
     return (
       <Box
@@ -59,7 +62,7 @@ export const ScalingChart: React.FC<ScalingChartProps> = ({ chartData, loading, 
       >
         <CircularProgress size={32} sx={{ mb: 1 }} />
         <Typography variant="body2" color="text.secondary">
-          Loading scaling metrics from Prometheus...
+          {t('Loading scaling metrics from Prometheus')}...
         </Typography>
       </Box>
     );
@@ -79,7 +82,7 @@ export const ScalingChart: React.FC<ScalingChartProps> = ({ chartData, loading, 
     return (
       <Box display="flex" alignItems="center" justifyContent="center" height="100%">
         <Typography color="textSecondary" variant="body2">
-          No scaling data available
+          {t('No scaling data available')}
         </Typography>
       </Box>
     );
@@ -126,6 +129,7 @@ export const ScalingChart: React.FC<ScalingChartProps> = ({ chartData, loading, 
         <Line
           type="monotone"
           dataKey="Replicas"
+          name={t('Replicas')}
           stroke="#66BB6A"
           strokeWidth={2}
           dot={{ fill: '#66BB6A', strokeWidth: 0, r: 2 }}
@@ -134,6 +138,7 @@ export const ScalingChart: React.FC<ScalingChartProps> = ({ chartData, loading, 
         <Line
           type="monotone"
           dataKey="CPU"
+          name={t('CPU')}
           stroke="#42A5F5"
           strokeWidth={2}
           dot={{ fill: '#42A5F5', strokeWidth: 0, r: 2 }}

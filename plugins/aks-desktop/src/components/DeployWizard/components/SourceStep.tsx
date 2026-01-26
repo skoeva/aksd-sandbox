@@ -2,6 +2,7 @@
 // Licensed under the Apache 2.0.
 
 import { Icon } from '@iconify/react';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { alpha, Box, Card, CardContent, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import React from 'react';
@@ -19,40 +20,44 @@ export interface SourceStepProps {
   onSourceTypeChange: (type: 'container' | 'yaml') => void;
 }
 
-const deploymentSources: DeploymentSource[] = [
-  {
-    type: 'container',
-    displayName: 'Container Image',
-    description: 'Deploy from Azure Container Registry, Docker Hub, or GHCR',
-    icon: 'container',
-    features: [
-      'Auto-generated Deployment and Service manifests',
-      'Guided configuration for ports, replicas, env, and resources',
-      'No Kubernetes expertise required to get started',
-    ],
-  },
-  {
-    type: 'yaml',
-    displayName: 'Kubernetes YAML',
-    description: 'Bring your own Kubernetes manifests to deploy',
-    icon: 'yaml',
-    features: [
-      'Use existing manifests for full control',
-      'Multi-file support (Deployments, Services, Ingress, etc.)',
-      'Preview and basic validation before apply',
-    ],
-  },
-];
+function getDeploymentSources(t: (key: string) => string): DeploymentSource[] {
+  return [
+    {
+      type: 'container',
+      displayName: t('Container Image'),
+      description: t('Deploy from Azure Container Registry, Docker Hub, or GHCR'),
+      icon: 'container',
+      features: [
+        t('Auto-generated Deployment and Service manifests'),
+        t('Guided configuration for ports, replicas, env, and resources'),
+        t('No Kubernetes expertise required to get started'),
+      ],
+    },
+    {
+      type: 'yaml',
+      displayName: t('Kubernetes YAML'),
+      description: t('Bring your own Kubernetes manifests to deploy'),
+      icon: 'yaml',
+      features: [
+        t('Use existing manifests for full control'),
+        t('Multi-file support (Deployments, Services, Ingress, etc.)'),
+        t('Preview and basic validation before apply'),
+      ],
+    },
+  ];
+}
 
 export default function SourceStep({ sourceType, onSourceTypeChange }: SourceStepProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
+  const deploymentSources = getDeploymentSources(t);
   return (
     <Box>
       <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 1 }}>
-        Select Source
+        {t('Select Source')}
       </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-        Choose a source for your deployment (container image, repo, etc.).
+        {t('Choose a source for your deployment (container image, repo, etc.).')}
       </Typography>
       <Box sx={{ display: 'flex', gap: 3, mt: 2 }}>
         {deploymentSources.map(source => {
@@ -181,7 +186,7 @@ export default function SourceStep({ sourceType, onSourceTypeChange }: SourceSte
                       fontSize: '0.7rem',
                     }}
                   >
-                    Features
+                    {t('Features')}
                   </Typography>
                   <Box
                     component="ul"
