@@ -22,6 +22,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({ steps, activeStep, onSte
         flexDirection: 'row',
         justifyContent: 'flex-start',
         alignItems: 'center',
+        // @ts-ignore todo: fix this
         backgroundColor: theme.palette.background.muted,
         px: 3,
         py: 2,
