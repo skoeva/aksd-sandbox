@@ -182,10 +182,12 @@ export default function RegisterAKSClusterDialog({
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
+      <DialogTitle component="h1">
         <Box display="flex" alignItems="center" gap={1}>
           <Icon icon="logos:microsoft-azure" style={{ fontSize: '24px' }} />
-          <Typography variant="h6">Register AKS Cluster</Typography>
+          <Typography variant="h6" component="span">
+            Register AKS Cluster
+          </Typography>
         </Box>
       </DialogTitle>
 
