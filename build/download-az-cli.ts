@@ -14,7 +14,6 @@ import * as https from 'https';
 import * as http from 'http';
 import { execSync } from 'child_process';
 import { createHash } from 'crypto';
-import { pipeline } from 'stream/promises';
 import { createWriteStream, createReadStream } from 'fs';
 
 const SCRIPT_DIR = __dirname;
