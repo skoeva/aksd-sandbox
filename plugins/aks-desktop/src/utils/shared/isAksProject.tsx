@@ -2,23 +2,24 @@
 // Licensed under the Apache 2.0.
 
 import { K8s } from '@kinvolk/headlamp-plugin/lib';
+import type { ApiClient } from '@kinvolk/headlamp-plugin/lib/lib/k8s/api/v1/factories';
+import type { KubeNamespace } from '@kinvolk/headlamp-plugin/lib/lib/k8s/namespace';
 
 /** Checks if the given project is an AKS desktop managed namespace project  */
 export const isAksProject = ({
   project,
 }: {
   project: { namespaces: string[]; clusters: string[] };
-}) =>
-  new Promise(res => {
-    const cancelFn = K8s.ResourceClasses.Namespace.apiEndpoint.get(
+}): Promise<boolean> =>
+  new Promise<boolean>(resolve => {
+    const cancelFn = (K8s.ResourceClasses.Namespace.apiEndpoint as ApiClient<KubeNamespace>).get(
       project.namespaces[0],
-      // @ts-ignore todo: not sure what the issue is here.
-      r => {
-        res(r.metadata.labels['headlamp.dev/project-managed-by'] === 'aks-desktop');
+      ns => {
+        resolve(ns.metadata?.labels?.['headlamp.dev/project-managed-by'] === 'aks-desktop');
         cancelFn.then(it => it());
       },
       () => {
-        res(false);
+        resolve(false);
       },
       {},
       project.clusters[0]

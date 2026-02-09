@@ -3,8 +3,7 @@
 
 import { Icon } from '@iconify/react';
 import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
-// @ts-ignore
-import { useClustersConf } from '@kinvolk/headlamp-plugin/lib/K8s';
+import { useClustersConf } from '@kinvolk/headlamp-plugin/lib/k8s';
 import {
   Alert,
   AlertTitle,

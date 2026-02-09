@@ -1,7 +1,6 @@
 import { Icon } from '@iconify/react';
 import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { PageGrid, SectionBox, Table } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
-// @ts-ignore
 import { Alert, Box, Button, Checkbox, CircularProgress, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
