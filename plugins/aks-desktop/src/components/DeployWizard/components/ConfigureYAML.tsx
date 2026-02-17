@@ -20,7 +20,7 @@ export default function ConfigureYAML({
 }: ConfigureYAMLProps) {
   return (
     <>
-      <Typography variant="h6" gutterBottom>
+      <Typography variant="h6" component="h2" gutterBottom>
         Kubernetes YAML
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
