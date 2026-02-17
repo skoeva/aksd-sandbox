@@ -153,9 +153,9 @@ function AuthRoute(props: AuthRouteProps) {
     requiresAuth = true,
     requiresCluster = true,
     computedMatch = {},
+    clusters,
     ...other
   } = props;
-  const redirectRoute = getCluster() ? 'login' : 'chooser';
   useSidebarItem(sidebar, computedMatch);
   const cluster = useCluster();
   const query = useQuery({
@@ -164,6 +164,21 @@ function AuthRoute(props: AuthRouteProps) {
     enabled: !!cluster && requiresAuth,
     retry: 0,
   });
+
+  const clusterConf = cluster && clusters ? clusters[cluster] : null;
+  const authError = query.error as any;
+  const isExplicitAuthError = [401, 403].includes(authError?.status);
+
+  let redirectRoute: string;
+  if (!cluster) {
+    redirectRoute = 'chooser';
+  } else if (clusterConf?.auth_type === 'oidc') {
+    redirectRoute = 'login';
+  } else if (query.isError && isExplicitAuthError) {
+    redirectRoute = 'token';
+  } else {
+    redirectRoute = 'login';
+  }
 
   function getRenderer({ location }: RouteProps) {
     if (!requiresAuth) {
