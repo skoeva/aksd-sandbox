@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import { Activity, activitySlice, ActivityState } from './Activity';
+import { activitySlice, ActivityState } from './Activity';
+import type { Activity as IActivity } from './activitySlice';
 
 const { reducer, actions } = activitySlice;
 const { launchActivity, close, update } = actions;
@@ -30,7 +31,7 @@ describe('activitySlice', () => {
   });
 
   describe('launchActivity', () => {
-    const newActivity: Activity = {
+    const newActivity: IActivity = {
       id: '1',
       content: 'Test Content',
       location: 'full',
@@ -56,7 +57,7 @@ describe('activitySlice', () => {
     });
 
     it('should close temporary activities', () => {
-      const temporaryActivity: Activity = {
+      const temporaryActivity: IActivity = {
         id: '2',
         content: 'Temp Content',
         location: 'full',
@@ -91,7 +92,7 @@ describe('activitySlice', () => {
   });
 
   describe('update', () => {
-    const initialActivity: Activity = {
+    const initialActivity: IActivity = {
       id: '1',
       content: 'Test',
       location: 'full',
