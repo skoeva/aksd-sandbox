@@ -19,7 +19,8 @@ import { Meta, StoryFn } from '@storybook/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import store from '../../redux/stores/store';
-import { ActivitiesRenderer, Activity, activitySlice } from './Activity';
+import { ActivitiesRenderer, activitySlice } from './Activity';
+import type { Activity as IActivity } from './activitySlice';
 
 export default {
   title: 'Activity',
@@ -59,14 +60,14 @@ export default {
   ],
 } as Meta;
 
-const makeActivity = (activity: Partial<Activity>): Activity => ({
+const makeActivity = (activity: Partial<IActivity>): IActivity => ({
   id: 'id',
   location: 'window',
   content: 'Activity Content',
   ...activity,
 });
 
-function setupActivities(activities: Activity[]) {
+function setupActivities(activities: IActivity[]) {
   activities.forEach(activity => {
     store.dispatch(activitySlice.actions.launchActivity(activity));
   });

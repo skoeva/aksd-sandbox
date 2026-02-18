@@ -38,6 +38,14 @@ vi.mock('./webSocket', () => ({
   BASE_WS_URL: 'http://localhost:3000',
 }));
 
+// Mock the KubeObject module to break the circular dependency chain:
+// useKubeObjectList -> KubeList -> KubeObject -> lib/k8s/index -> clusterRole -> KubeObject (undefined)
+vi.mock('../../KubeObject', () => ({
+  KubeObject: class MockKubeObject {
+    constructor(public jsonData: any) {}
+  },
+}));
+
 describe('makeListRequests', () => {
   describe('for non namespaced resource', () => {
     it('should not include namespace in requests', () => {
