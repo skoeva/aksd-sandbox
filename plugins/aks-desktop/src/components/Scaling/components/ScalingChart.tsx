@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the Apache 2.0.
 
-import { Box, Typography } from '@mui/material';
+import { Box, CircularProgress, Typography } from '@mui/material';
 import React from 'react';
 import {
   CartesianGrid,
@@ -15,14 +15,66 @@ import {
 } from 'recharts';
 import type { ChartDataPoint } from '../hooks/useChartData';
 
+/** Custom XAxis tick renderer that displays labels at a -35° angle to prevent overlap. */
+const AngledTick = ({
+  x,
+  y,
+  payload,
+}: {
+  x: string | number;
+  y: string | number;
+  payload: { value: string };
+}) => {
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text x={0} y={0} dy={12} textAnchor="end" fill="#888" fontSize={9} transform="rotate(-35)">
+        {payload.value}
+      </text>
+    </g>
+  );
+};
+
+/** Props for the {@link ScalingChart} component. */
 interface ScalingChartProps {
+  /** Array of chart data points to render. */
   chartData: ChartDataPoint[];
+  /** Whether the chart data is currently loading. */
+  loading?: boolean;
+  /** Error message to display, or null/undefined if no error. */
+  error?: string | null;
 }
 
 /**
  * Displays the scaling metrics chart (replicas and CPU over time)
  */
-export const ScalingChart: React.FC<ScalingChartProps> = ({ chartData }) => {
+export const ScalingChart: React.FC<ScalingChartProps> = ({ chartData, loading, error }) => {
+  if (loading) {
+    return (
+      <Box
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        justifyContent="center"
+        height="100%"
+      >
+        <CircularProgress size={32} sx={{ mb: 1 }} />
+        <Typography variant="body2" color="text.secondary">
+          Loading scaling metrics from Prometheus...
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box display="flex" alignItems="center" justifyContent="center" height="100%">
+        <Typography color="error" variant="body2">
+          {error}
+        </Typography>
+      </Box>
+    );
+  }
+
   if (chartData.length === 0) {
     return (
       <Box display="flex" alignItems="center" justifyContent="center" height="100%">
@@ -49,9 +101,10 @@ export const ScalingChart: React.FC<ScalingChartProps> = ({ chartData }) => {
           dataKey="time"
           stroke="#888"
           fontSize={10}
-          tick={{ fontSize: 10 }}
+          tick={AngledTick}
           tickLine={{ stroke: '#e0e0e0' }}
-          interval={5} // Show every 6th tick to avoid crowding
+          interval={0} // Show all ticks (12 labels over 24 hours)
+          height={50}
         />
         <YAxis
           stroke="#888"
