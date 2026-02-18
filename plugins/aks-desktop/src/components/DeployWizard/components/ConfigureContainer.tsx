@@ -34,7 +34,7 @@ function LabelWithInfo({ label, infoText }: { label: string; infoText: string })
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
       <span>{label}</span>
       <Tooltip title={infoText} arrow>
-        <IconButton size="small" sx={{ p: 0, minWidth: 'auto', width: '20px', height: '20px' }}>
+        <IconButton aria-label={`Information about ${label}`}>
           <Icon icon="mdi:information-outline" width="16px" height="16px" />
         </IconButton>
       </Tooltip>
@@ -739,11 +739,8 @@ export default function ConfigureContainer({ containerConfig }: ConfigureContain
                     title="The minimum amount of CPU guaranteed to the container. Kubernetes will schedule the pod on a node with at least this much CPU available."
                     arrow
                   >
-                    <IconButton
-                      size="small"
-                      sx={{ p: 0, minWidth: 'auto', width: '16px', height: '16px' }}
-                    >
-                      <Icon icon="mdi:information-outline" width="14px" height="14px" />
+                    <IconButton aria-label="Information about CPU request">
+                      <Icon icon="mdi:information-outline" width="16px" height="16px" />
                     </IconButton>
                   </Tooltip>
                 </Box>
@@ -800,11 +797,8 @@ export default function ConfigureContainer({ containerConfig }: ConfigureContain
                     title="The maximum amount of CPU the container can use. If exceeded, the container will be throttled."
                     arrow
                   >
-                    <IconButton
-                      size="small"
-                      sx={{ p: 0, minWidth: 'auto', width: '16px', height: '16px' }}
-                    >
-                      <Icon icon="mdi:information-outline" width="14px" height="14px" />
+                    <IconButton aria-label="Information about CPU limit">
+                      <Icon icon="mdi:information-outline" width="16px" height="16px" />
                     </IconButton>
                   </Tooltip>
                 </Box>
@@ -861,11 +855,8 @@ export default function ConfigureContainer({ containerConfig }: ConfigureContain
                     title="The minimum amount of memory guaranteed to the container. Kubernetes will schedule the pod on a node with at least this much memory available."
                     arrow
                   >
-                    <IconButton
-                      size="small"
-                      sx={{ p: 0, minWidth: 'auto', width: '16px', height: '16px' }}
-                    >
-                      <Icon icon="mdi:information-outline" width="14px" height="14px" />
+                    <IconButton aria-label="Information about memory request">
+                      <Icon icon="mdi:information-outline" width="16px" height="16px" />
                     </IconButton>
                   </Tooltip>
                 </Box>
@@ -922,11 +913,8 @@ export default function ConfigureContainer({ containerConfig }: ConfigureContain
                     title="The maximum amount of memory the container can use. If exceeded, the container will be terminated (OOMKilled)."
                     arrow
                   >
-                    <IconButton
-                      size="small"
-                      sx={{ p: 0, minWidth: 'auto', width: '16px', height: '16px' }}
-                    >
-                      <Icon icon="mdi:information-outline" width="14px" height="14px" />
+                    <IconButton aria-label="Information about memory limit">
+                      <Icon icon="mdi:information-outline" width="16px" height="16px" />
                     </IconButton>
                   </Tooltip>
                 </Box>
@@ -1145,10 +1133,7 @@ export default function ConfigureContainer({ containerConfig }: ConfigureContain
                       title="The target average CPU utilization percentage across all pods. HPA will scale up when CPU usage exceeds this value and scale down when it's below."
                       arrow
                     >
-                      <IconButton
-                        size="small"
-                        sx={{ p: 0, minWidth: 'auto', width: '20px', height: '20px' }}
-                      >
+                      <IconButton aria-label="Information about target CPU utilization">
                         <Icon icon="mdi:information-outline" width="16px" height="16px" />
                       </IconButton>
                     </Tooltip>
