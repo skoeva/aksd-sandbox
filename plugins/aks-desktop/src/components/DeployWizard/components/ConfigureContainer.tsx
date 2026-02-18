@@ -45,7 +45,7 @@ function LabelWithInfo({ label, infoText }: { label: string; infoText: string })
 export default function ConfigureContainer({ containerConfig }: ConfigureContainerProps) {
   return (
     <>
-      <Typography variant="h6" gutterBottom>
+      <Typography variant="h6" component="h2" gutterBottom>
         Configure Container Deployment
       </Typography>
       <Stepper activeStep={containerConfig.config.containerStep} orientation="vertical">
