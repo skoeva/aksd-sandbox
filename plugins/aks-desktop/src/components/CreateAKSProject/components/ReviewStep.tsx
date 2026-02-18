@@ -30,7 +30,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ formData, subscriptions,
         {/* Basics Section */}
         <Grid item xs={12}>
           <Card variant="outlined" sx={{ p: 2, mb: 2 }}>
-            <Typography variant="h6" gutterBottom sx={sectionTitleSx}>
+            <Typography variant="h6" component="h3" gutterBottom sx={sectionTitleSx}>
               <Icon icon="mdi:project" style={{ marginRight: 8, verticalAlign: 'middle' }} />
               Project Basics
             </Typography>
@@ -72,7 +72,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ formData, subscriptions,
         {/* Networking and Compute Quota Side by Side */}
         <Grid item xs={12} md={6}>
           <Card variant="outlined" sx={{ p: 2, mb: 2, height: '200px' }}>
-            <Typography variant="h6" gutterBottom sx={sectionTitleSx}>
+            <Typography variant="h6" component="h3" gutterBottom sx={sectionTitleSx}>
               <Icon icon="mdi:network" style={{ marginRight: 8, verticalAlign: 'middle' }} />
               Networking Policies
             </Typography>
@@ -95,7 +95,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ formData, subscriptions,
 
         <Grid item xs={12} md={6}>
           <Card variant="outlined" sx={{ p: 2, mb: 2, height: '200px' }}>
-            <Typography variant="h6" gutterBottom sx={sectionTitleSx}>
+            <Typography variant="h6" component="h3" gutterBottom sx={sectionTitleSx}>
               <Icon icon="mdi:cpu-64-bit" style={{ marginRight: 8, verticalAlign: 'middle' }} />
               Compute Quota
             </Typography>
@@ -168,7 +168,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ formData, subscriptions,
         {/* Access Section with Scroll */}
         <Grid item xs={12}>
           <Card variant="outlined" sx={{ p: 2, mb: 2 }}>
-            <Typography variant="h6" gutterBottom sx={sectionTitleSx}>
+            <Typography variant="h6" component="h3" gutterBottom sx={sectionTitleSx}>
               <Icon icon="mdi:account-group" style={{ marginRight: 8, verticalAlign: 'middle' }} />
               Access Control ({formData.userAssignments.length} assignee
               {formData.userAssignments.length !== 1 ? 's' : ''})
