@@ -11,7 +11,6 @@ import {
   Button,
   CircularProgress,
   FormControl,
-  IconButton,
   Typography,
 } from '@mui/material';
 import React, { useEffect, useRef, useState } from 'react';
@@ -258,11 +257,7 @@ export const BasicsStep: React.FC<BasicsStepProps> = ({
                 ? 'Project name is available'
                 : 'Project name must contain only lowercase letters, numbers, and hyphens (no spaces)'
             }
-            endAdornment={
-              <IconButton size="small" sx={{ color: 'primary.main' }}>
-                <Icon icon="mdi:edit" />
-              </IconButton>
-            }
+            endAdornment={<Icon icon="mdi:edit" />}
           />
         </FormControl>
 
