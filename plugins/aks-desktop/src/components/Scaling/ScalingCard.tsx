@@ -2,7 +2,7 @@
 // Licensed under the Apache 2.0.
 
 import { Icon } from '@iconify/react';
-import { K8s } from '@kinvolk/headlamp-plugin/lib';
+import { K8s, useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { Box, Typography } from '@mui/material';
 import React from 'react';
 import { DeploymentSelector } from './components/DeploymentSelector';
@@ -41,6 +41,7 @@ interface ScalingCardProps {
  * @param props.project - The project whose first cluster and namespace are used to fetch deployments.
  */
 function ScalingCard({ project }: ScalingCardProps) {
+  const { t } = useTranslation();
   const namespace = project.namespaces?.[0];
   const cluster = project.clusters?.[0];
 
@@ -84,7 +85,7 @@ function ScalingCard({ project }: ScalingCardProps) {
           mb: 2,
         }}
       >
-        <Typography variant="h6">Scaling</Typography>
+        <Typography variant="h6">{t('Scaling')}</Typography>
         <DeploymentSelector
           selectedDeployment={selectedDeployment}
           deployments={deployments}
@@ -126,7 +127,7 @@ function ScalingCard({ project }: ScalingCardProps) {
         >
           <Icon icon="mdi:chart-line" style={{ marginBottom: 16, color: '#ccc', fontSize: 48 }} />
           <Typography color="textSecondary" variant="body1">
-            Select a deployment to view scaling metrics
+            {t('Select a deployment to view scaling metrics')}
           </Typography>
         </Box>
       )}
