@@ -2,6 +2,7 @@
 // Licensed under the Apache 2.0.
 
 import { Icon } from '@iconify/react';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { Box, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import React from 'react';
@@ -12,9 +13,12 @@ import type { BreadcrumbProps } from '../types';
  */
 export const Breadcrumb: React.FC<BreadcrumbProps> = ({ steps, activeStep, onStepClick }) => {
   const theme = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Box
+      role="navigation"
+      aria-label={t('Wizard steps')}
       sx={{
         width: '100%',
         borderBottom: `1px solid ${theme.palette.divider}`,
@@ -31,7 +35,16 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({ steps, activeStep, onSte
       {steps.map((label, index) => (
         <React.Fragment key={index}>
           <Box
+            role="button"
+            tabIndex={0}
+            aria-current={index === activeStep ? 'step' : undefined}
             onClick={() => onStepClick(index)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onStepClick(index);
+              }
+            }}
             sx={{
               display: 'flex',
               alignItems: 'center',
