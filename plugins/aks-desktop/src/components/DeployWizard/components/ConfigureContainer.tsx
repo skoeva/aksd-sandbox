@@ -180,9 +180,22 @@ export default function ConfigureContainer({ containerConfig }: ConfigureContain
                 )}
               </Typography>
             </Box>
-            <Box sx={{ display: 'flex', gap: 2, width: '100%', mt: 1 }}>
+            <Box
+              role="group"
+              aria-label={t('Service type')}
+              sx={{ display: 'flex', gap: 2, width: '100%', mt: 1 }}
+            >
               <Box
+                role="button"
+                tabIndex={0}
+                aria-pressed={containerConfig.config.serviceType === 'ClusterIP'}
                 onClick={() => containerConfig.setConfig(c => ({ ...c, serviceType: 'ClusterIP' }))}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    containerConfig.setConfig(c => ({ ...c, serviceType: 'ClusterIP' }));
+                  }
+                }}
                 sx={{
                   flex: 1,
                   p: 2,
@@ -204,9 +217,18 @@ export default function ConfigureContainer({ containerConfig }: ConfigureContain
                 </Typography>
               </Box>
               <Box
+                role="button"
+                tabIndex={0}
+                aria-pressed={containerConfig.config.serviceType === 'LoadBalancer'}
                 onClick={() =>
                   containerConfig.setConfig(c => ({ ...c, serviceType: 'LoadBalancer' }))
                 }
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    containerConfig.setConfig(c => ({ ...c, serviceType: 'LoadBalancer' }));
+                  }
+                }}
                 sx={{
                   flex: 1,
                   p: 2,
