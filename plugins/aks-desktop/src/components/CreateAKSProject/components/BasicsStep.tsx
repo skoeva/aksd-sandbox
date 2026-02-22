@@ -15,11 +15,42 @@ import {
 } from '@mui/material';
 import React, { useEffect, useRef, useState } from 'react';
 import { useAzureAuth } from '../../../hooks/useAzureAuth';
+import type { ClusterCapabilities } from '../../../types/ClusterCapabilities';
 import { registerAKSCluster } from '../../../utils/azure/aks';
 import type { BasicsStepProps } from '../types';
+import { ClusterConfigurePanel } from './ClusterConfigurePanel';
 import { FormField } from './FormField';
 import { SearchableSelect, SearchableSelectOption } from './SearchableSelect';
 import { ValidationAlert } from './ValidationAlert';
+
+// Helper to check if there are addons that can be enabled post-creation
+const hasConfigurableAddons = (cap: ClusterCapabilities | null): boolean => {
+  if (!cap) return false;
+  return cap.prometheusEnabled !== true || cap.kedaEnabled !== true || cap.vpaEnabled !== true;
+};
+
+function getClusterHelperText(
+  t: (key: string, options?: Record<string, unknown>) => string,
+  loadingClusters: boolean,
+  clusterCount: number,
+  totalClusterCount: number | null
+): string {
+  if (loadingClusters) {
+    return t('Only clusters with Azure Entra ID authentication are shown.');
+  }
+  const hiddenCount =
+    totalClusterCount !== null && totalClusterCount > clusterCount
+      ? totalClusterCount - clusterCount
+      : 0;
+  const hiddenSuffix =
+    hiddenCount > 0
+      ? ` (${t('{{count}} cluster(s) hidden — no Azure Entra ID', { count: hiddenCount })})`
+      : '';
+  if (clusterCount === 0) {
+    return `${t('No eligible clusters found in this subscription.')}${hiddenSuffix}`;
+  }
+  return `${t('{{count}} eligible cluster(s) found.', { count: clusterCount })}${hiddenSuffix}`;
+}
 
 /**
  * Basics step component for project details and Azure resource selection
@@ -37,10 +68,14 @@ export const BasicsStep: React.FC<BasicsStepProps> = ({
   extensionStatus,
   featureStatus,
   namespaceStatus,
+  totalClusterCount,
+  clusterCapabilities,
+  capabilitiesLoading,
   onInstallExtension,
   onRegisterFeature,
   onRetrySubscriptions,
   onRetryClusters,
+  onRefreshCapabilities,
 }) => {
   const { t } = useTranslation();
   const headlampClusters = useClustersConf();
@@ -335,18 +370,7 @@ export const BasicsStep: React.FC<BasicsStepProps> = ({
             'No clusters with Azure Entra ID authentication found for this subscription'
           )}
           showSearch
-          helperText={t(
-            'Only clusters with Azure Entra ID authentication are shown and eligible for projects. {{details}}',
-            {
-              details: loadingClusters
-                ? ''
-                : clusters.length === 0
-                ? t('No clusters with Azure Entra ID authentication found in this subscription')
-                : t('{{count}} cluster with Azure Entra ID authentication found', {
-                    count: clusters.length,
-                  }),
-            }
-          )}
+          helperText={getClusterHelperText(t, loadingClusters, clusters.length, totalClusterCount)}
         />
 
         {formData.subscription && selectedCluster && isClusterMissing && (
@@ -399,6 +423,40 @@ export const BasicsStep: React.FC<BasicsStepProps> = ({
             }
             return null;
           })()}
+
+        {/* Cluster capability warnings */}
+        {validation.warnings.length > 0 && (
+          <>
+            {validation.warnings.map((warning, index) => (
+              <Box mt={1} key={`cap-warning-${index}`}>
+                <ValidationAlert type="warning" message={warning} />
+              </Box>
+            ))}
+          </>
+        )}
+        {/* Cluster configure panel for enabling missing addons */}
+        {formData.cluster && clusterCapabilities && hasConfigurableAddons(clusterCapabilities) && (
+          <Box mt={2}>
+            <ClusterConfigurePanel
+              capabilities={clusterCapabilities}
+              subscriptionId={formData.subscription}
+              resourceGroup={formData.resourceGroup}
+              clusterName={formData.cluster}
+              onConfigured={() => {
+                if (onRefreshCapabilities) {
+                  onRefreshCapabilities();
+                }
+              }}
+            />
+          </Box>
+        )}
+        {capabilitiesLoading && formData.cluster && (
+          <Box mt={1}>
+            <Typography variant="body2" color="text.secondary">
+              Checking cluster capabilities...
+            </Typography>
+          </Box>
+        )}
 
         {clusterError && (
           <Box mt={1}>
