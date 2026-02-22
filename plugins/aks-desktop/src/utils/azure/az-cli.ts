@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the Apache 2.0.
 // Refactored Azure CLI utility functions for Headlamp plugin using the shared run-command wrapper (runCommandAsync)
+import type { ClusterCapabilities } from '../../types/ClusterCapabilities';
 import { runCommandAsync as execCommand } from '../shared/runCommandAsync';
 import { getAzCommand, getInstallationInstructions } from './az-cli-path';
 
@@ -17,6 +18,12 @@ const debugLog = (...args: any[]) => {
     console.log(...args);
   }
 };
+
+// Validate that a string is a valid GUID (prevents KQL injection in Resource Graph queries)
+const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isValidGuid(value: string): boolean {
+  return GUID_PATTERN.test(value);
+}
 
 // Helper to determine if error message implies re-login is needed
 function needsRelogin(error: string): boolean {
@@ -967,6 +974,105 @@ export async function getAksClusterStatus(options: {
   }
 }
 
+// Get cluster capabilities (SKU, network policy, addons)
+export async function getClusterCapabilities(options: {
+  subscriptionId: string;
+  resourceGroup: string;
+  clusterName: string;
+}): Promise<ClusterCapabilities> {
+  const { subscriptionId, resourceGroup, clusterName } = options;
+
+  const args = [
+    'aks',
+    'show',
+    '--subscription',
+    subscriptionId,
+    '--resource-group',
+    resourceGroup,
+    '--name',
+    clusterName,
+    '--query',
+    '{sku:sku.name,aadProfile:aadProfile,azureRbacEnabled:aadProfile.enableAzureRbac,networkPolicy:networkProfile.networkPolicy,networkPlugin:networkProfile.networkPlugin,prometheusEnabled:azureMonitorProfile.metrics.enabled,containerInsightsEnabled:addonProfiles.omsagent.enabled,kedaEnabled:workloadAutoScalerProfile.keda.enabled,vpaEnabled:workloadAutoScalerProfile.verticalPodAutoscaler.enabled}',
+    '--output',
+    'json',
+  ];
+
+  const { stdout, stderr } = await runCommandAsync('az', args);
+
+  if (stderr && needsRelogin(stderr)) {
+    throw new Error('Authentication required. Please log in to Azure CLI: az login');
+  }
+
+  if (stderr && stderr.includes('ERROR:')) {
+    console.error('Failed to get cluster capabilities:', stderr);
+    throw new Error(`Failed to get cluster capabilities: ${stderr}`);
+  }
+
+  try {
+    const result = JSON.parse(stdout);
+    return {
+      sku: (result.sku as ClusterCapabilities['sku']) || null,
+      aadEnabled: result.aadProfile !== null && result.aadProfile !== undefined,
+      azureRbacEnabled: result.azureRbacEnabled ?? null,
+      networkPolicy: (result.networkPolicy as ClusterCapabilities['networkPolicy']) || 'none',
+      networkPlugin: (result.networkPlugin as ClusterCapabilities['networkPlugin']) || null,
+      prometheusEnabled: result.prometheusEnabled ?? null,
+      containerInsightsEnabled: result.containerInsightsEnabled ?? null,
+      kedaEnabled: result.kedaEnabled ?? null,
+      vpaEnabled: result.vpaEnabled ?? null,
+    };
+  } catch (error) {
+    console.error('Failed to parse cluster capabilities response:', error);
+    throw new Error(`Failed to parse cluster capabilities: ${error}`);
+  }
+}
+
+// Enable a cluster addon (azure-monitor-metrics, keda, or vpa)
+export async function enableClusterAddon(options: {
+  subscriptionId: string;
+  resourceGroup: string;
+  clusterName: string;
+  addon: 'azure-monitor-metrics' | 'keda' | 'vpa';
+}): Promise<{ success: boolean; error?: string }> {
+  const { subscriptionId, resourceGroup, clusterName, addon } = options;
+
+  const addonFlags: Record<string, string[]> = {
+    'azure-monitor-metrics': ['--enable-azure-monitor-metrics'],
+    keda: ['--enable-keda'],
+    vpa: ['--enable-vpa'],
+  };
+
+  const flags = addonFlags[addon];
+  if (!flags) {
+    return { success: false, error: `Unknown addon: ${addon}` };
+  }
+
+  const args = [
+    'aks',
+    'update',
+    '--subscription',
+    subscriptionId,
+    '--resource-group',
+    resourceGroup,
+    '--name',
+    clusterName,
+    ...flags,
+    '--no-wait',
+  ];
+
+  const { stderr } = await runCommandAsync('az', args);
+
+  if (stderr && needsRelogin(stderr)) {
+    return { success: false, error: 'Authentication required. Please log in to Azure CLI.' };
+  }
+
+  if (stderr && stderr.includes('ERROR:')) {
+    return { success: false, error: `Failed to enable ${addon}: ${stderr}` };
+  }
+
+  return { success: true };
+}
+
 // Get AKS cluster kubeconfig credentials
 export async function getAksKubeconfig(options: {
   subscriptionId: string;
@@ -1459,8 +1565,14 @@ export async function getClusterResourceGroupViaGraph(
   subscription: string
 ): Promise<string | null> {
   try {
-    if (!subscription) {
-      debugLog('Resource Graph: No subscription ID');
+    if (!subscription || !isValidGuid(subscription)) {
+      debugLog('Resource Graph: Missing or invalid subscription ID');
+      return null;
+    }
+
+    // Sanitize clusterName: allow only alphanumeric, hyphens, and underscores
+    if (!/^[a-zA-Z0-9_-]+$/.test(clusterName)) {
+      debugLog('Resource Graph: Invalid cluster name format');
       return null;
     }
 
@@ -1524,6 +1636,10 @@ export async function getClustersViaGraph(
   filterAad: boolean = false
 ): Promise<any[]> {
   try {
+    if (!isValidGuid(subscriptionId)) {
+      throw new Error('Invalid subscription ID format');
+    }
+
     const aadFilter = filterAad ? '| where isnotnull(properties.aadProfile)' : '';
 
     const query = `
@@ -1581,6 +1697,44 @@ export async function getClustersViaGraph(
     throw error;
   }
 }
+
+// Get total cluster count for a subscription using Azure Resource Graph
+export async function getClusterCount(subscriptionId: string): Promise<number> {
+  try {
+    // Validate subscriptionId is a GUID to prevent KQL injection
+    if (!isValidGuid(subscriptionId)) {
+      console.error('Invalid subscription ID format:', subscriptionId);
+      return -1;
+    }
+
+    const query = `Resources | where type =~ 'microsoft.containerservice/managedclusters' | where subscriptionId == '${subscriptionId}' | count`;
+    const { stdout, stderr } = await runCommandAsync('az', [
+      'graph',
+      'query',
+      '-q',
+      query,
+      '--output',
+      'json',
+    ]);
+
+    if (stderr && stderr.includes('ERROR:')) {
+      console.error('getClusterCount: Azure CLI error:', stderr);
+      return -1;
+    }
+
+    try {
+      const result = JSON.parse(stdout);
+      return result.data?.[0]?.Count ?? result.data?.[0]?.count_ ?? -1;
+    } catch (parseError) {
+      console.error('getClusterCount: Failed to parse response:', parseError);
+      return -1;
+    }
+  } catch (error) {
+    console.error('Failed to get cluster count:', error);
+    return -1;
+  }
+}
+
 // Get AKS cluster info based on cluster name using Azure CLI
 export async function getClusterInfo(clusterName?: string): Promise<{
   clusterName?: string;
