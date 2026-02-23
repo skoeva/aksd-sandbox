@@ -29,7 +29,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({ steps, activeStep, onSte
       }}
     >
       {steps.map((label, index) => (
-        <React.Fragment key={label}>
+        <React.Fragment key={index}>
           <Box
             onClick={() => onStepClick(index)}
             sx={{
