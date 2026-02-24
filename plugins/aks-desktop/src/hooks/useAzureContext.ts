@@ -34,10 +34,27 @@ export const useAzureContext = (
       try {
         const clusterInfo = await getClusterInfo(cluster);
         if (!cancelled) {
+          const subscriptionId = clusterInfo.subscriptionId;
+          const resourceGroup = clusterInfo.resourceGroup;
+          const tenantId = azureAuth.tenantId;
+
+          if (!subscriptionId || !resourceGroup || !tenantId) {
+            console.error('Missing required Azure context fields:', {
+              subscriptionId,
+              resourceGroup,
+              tenantId,
+            });
+            setAzureContext(null);
+            setError(
+              'Missing required Azure context. Please ensure you are logged in and the cluster is associated with a valid subscription, resource group, and tenant.'
+            );
+            return;
+          }
+
           setAzureContext({
-            subscriptionId: clusterInfo.subscriptionId ?? '',
-            resourceGroup: clusterInfo.resourceGroup ?? '',
-            tenantId: azureAuth.tenantId ?? '',
+            subscriptionId,
+            resourceGroup,
+            tenantId,
           });
         }
       } catch (err) {
