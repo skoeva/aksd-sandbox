@@ -59,7 +59,7 @@ export default function SourceStep({ sourceType, onSourceTypeChange }: SourceSte
       <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
         {t('Choose a source for your deployment (container image, repo, etc.).')}
       </Typography>
-      <Box sx={{ display: 'flex', gap: 3, mt: 2 }}>
+      <Box role="group" aria-label={t('Deployment source')} sx={{ display: 'flex', gap: 3, mt: 2 }}>
         {deploymentSources.map(source => {
           const selected = sourceType === source.type;
           const iconName =
@@ -67,7 +67,17 @@ export default function SourceStep({ sourceType, onSourceTypeChange }: SourceSte
           return (
             <Card
               key={source.type}
+              role="button"
+              tabIndex={0}
+              aria-pressed={selected}
+              aria-label={source.displayName}
               onClick={() => onSourceTypeChange(source.type)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSourceTypeChange(source.type);
+                }
+              }}
               elevation={selected ? 4 : 1}
               sx={{
                 flex: 1,
