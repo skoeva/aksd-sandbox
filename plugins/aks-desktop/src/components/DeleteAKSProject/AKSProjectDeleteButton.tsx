@@ -1,5 +1,7 @@
 import { Icon } from '@iconify/react';
 import { K8s, useTranslation } from '@kinvolk/headlamp-plugin/lib';
+import type { ApiClient } from '@kinvolk/headlamp-plugin/lib/lib/k8s/api/v1/factories';
+import type { KubeNamespace } from '@kinvolk/headlamp-plugin/lib/lib/k8s/namespace';
 import Namespace from '@kinvolk/headlamp-plugin/lib/lib/k8s/namespace';
 import {
   Button,
@@ -122,9 +124,8 @@ const AKSProjectDeleteButton: React.FC<AKSProjectDeleteButtonProps> = ({ project
 
           if (deleteNamespaces) {
             // Delete the Kubernetes namespace
-            await K8s.ResourceClasses.Namespace.apiEndpoint.delete(
+            await (K8s.ResourceClasses.Namespace.apiEndpoint as ApiClient<KubeNamespace>).delete(
               namespaceName,
-              // @ts-ignore todo: not sure about this error
               {},
               project.clusters[0]
             );

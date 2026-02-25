@@ -14,7 +14,6 @@ import * as https from 'https';
 import * as http from 'http';
 import { execSync } from 'child_process';
 import { createHash } from 'crypto';
-import { pipeline } from 'stream/promises';
 import { createWriteStream, createReadStream } from 'fs';
 
 const SCRIPT_DIR = __dirname;
@@ -248,7 +247,7 @@ async function installAzCliWithPython(platform: string): Promise<void> {
   // Download and use bundled Python for both Linux and macOS
   if (!PYTHON_URL) {
     console.error(`❌ ERROR: No Python URL configured for platform: ${platform}`);
-    console.error('   Please add python.${platform}.url to package.json config.externalTools');
+    console.error(`   Please add python.${platform}.url to package.json config.externalTools`);
     throw new Error('Python URL not configured');
   }
 
@@ -482,7 +481,7 @@ async function main() {
     const readmePath = path.join(TARGET_DIR, 'README.md');
     // todo: fix this on windows
     // const dirSize = execSync(`du -sh "${TARGET_DIR}" 2>/dev/null | cut -f1`, { encoding: 'utf-8' }).trim();
-    const dirSize = 0
+    const dirSize = 0;
 
     fs.writeFileSync(readmePath, `# Azure CLI for ${CURRENT_PLATFORM}
 

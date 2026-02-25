@@ -4,8 +4,7 @@
 import { Icon } from '@iconify/react';
 import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { PageGrid, SectionBox } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
-// @ts-ignore
-import { useClustersConf } from '@kinvolk/headlamp-plugin/lib/K8s';
+import { useClustersConf } from '@kinvolk/headlamp-plugin/lib/k8s';
 import { Box, Button, Card, CardContent, CircularProgress, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';

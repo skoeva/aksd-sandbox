@@ -165,7 +165,7 @@ export async function getAKSClusterDetails(
     if (stderr && (stderr.includes('ERROR') || stderr.includes('error'))) {
       return {
         success: false,
-        message: stderr || 'Failed to get AKS cluster details',
+        message: stderr,
       };
     }
 
