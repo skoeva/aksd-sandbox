@@ -13,7 +13,6 @@ import {
 } from '@mui/material';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  getClusterResourceIdAndGroup,
   getManagedNamespaceDetails,
   getManagedNamespaces,
   updateManagedNamespace,
@@ -33,10 +32,6 @@ interface InfoTabProps {
 
 const InfoTab: React.FC<InfoTabProps> = ({ project }) => {
   const { t } = useTranslation();
-  const [clusterInfo, setClusterInfo] = useState<{
-    resourceId: string;
-    resourceGroup: string;
-  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   type NamespaceDetails = {
@@ -63,6 +58,8 @@ const InfoTab: React.FC<InfoTabProps> = ({ project }) => {
   );
   const subscription =
     namespaceInstance?.jsonData?.metadata?.labels?.['aks-desktop/project-subscription'];
+  const resourceGroup =
+    namespaceInstance?.jsonData?.metadata?.labels?.['aks-desktop/project-resource-group'];
 
   const [namespaceDetails, setNamespaceDetails] = useState<NamespaceDetails | null>(null);
   const [formData, setFormData] = useState<FormData>(DEFAULT_FORM_DATA);
@@ -78,44 +75,7 @@ const InfoTab: React.FC<InfoTabProps> = ({ project }) => {
   useEffect(() => {
     let isMounted = true;
     const clusterName = project?.clusters?.[0];
-    if (!clusterName) {
-      setClusterInfo(null);
-      setError(t('No cluster selected'));
-      return () => {
-        isMounted = false;
-      };
-    }
-
-    if (!subscription) return;
-
-    (async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const result = await getClusterResourceIdAndGroup(clusterName, subscription);
-        if (isMounted) setClusterInfo(result);
-      } catch (error) {
-        console.error(error);
-        if (isMounted) {
-          setClusterInfo(null);
-          setError(t('Failed to fetch cluster info'));
-        }
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    })();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [project, subscription, t]);
-
-  useEffect(() => {
-    let isMounted = true;
-    const clusterName = project?.clusters?.[0];
-    const resourceGroup = clusterInfo?.resourceGroup;
     if (!clusterName || !resourceGroup) {
-      // reset namespace-related state when prerequisites are missing
       setNamespaceDetails(null);
       return () => {
         isMounted = false;
@@ -133,11 +93,10 @@ const InfoTab: React.FC<InfoTabProps> = ({ project }) => {
         });
 
         if (isMounted && nsList.length > 0) {
-          const managedNamespace = project.id;
           const details = await getManagedNamespaceDetails({
             clusterName,
             resourceGroup,
-            namespaceName: managedNamespace,
+            namespaceName: project.id,
             subscriptionId: subscription,
           });
           if (isMounted) setNamespaceDetails(details);
@@ -158,7 +117,7 @@ const InfoTab: React.FC<InfoTabProps> = ({ project }) => {
     return () => {
       isMounted = false;
     };
-  }, [clusterInfo, project, subscription, t]);
+  }, [project, subscription, resourceGroup]);
 
   // Utils reused across renders
   const normalizePolicy = useCallback((value: string): FormData['ingress'] => {
@@ -261,18 +220,16 @@ const InfoTab: React.FC<InfoTabProps> = ({ project }) => {
   }, [baselineFormData, formData]);
 
   const handleSave = useCallback(async () => {
-    if (!clusterInfo?.resourceGroup) return;
+    if (!resourceGroup) return;
     const clusterName = project?.clusters?.[0];
-    const resourceGroup = clusterInfo.resourceGroup;
-    const managedNamespace = project.id;
-    if (!clusterName || !resourceGroup || !managedNamespace) return;
+    if (!clusterName || !project.id) return;
 
     try {
       setUpdating(true);
       await updateManagedNamespace({
         clusterName,
         resourceGroup,
-        namespaceName: managedNamespace,
+        namespaceName: project.id,
         ingressPolicy: formData.ingress as any,
         egressPolicy: formData.egress as any,
         cpuRequest: formData.cpuRequest,
@@ -281,7 +238,6 @@ const InfoTab: React.FC<InfoTabProps> = ({ project }) => {
         memoryLimit: formData.memoryLimit,
         noWait: false,
       });
-      // After a successful update, reset the baseline so the button disables
       setBaselineFormData(formData);
     } catch (e) {
       console.error('Failed to update managed namespace', e);
@@ -289,7 +245,7 @@ const InfoTab: React.FC<InfoTabProps> = ({ project }) => {
     } finally {
       setUpdating(false);
     }
-  }, [clusterInfo?.resourceGroup, formData, project?.clusters, project.id, t]);
+  }, [resourceGroup, formData, project?.clusters, project.id, t]);
 
   return (
     <Card>
@@ -309,7 +265,7 @@ const InfoTab: React.FC<InfoTabProps> = ({ project }) => {
         )}
         {!loading && error && <Typography color="error">{error}</Typography>}
 
-        {!loading && !error && clusterInfo && namespaceDetails && (
+        {!loading && !error && resourceGroup && namespaceDetails && (
           <Box>
             <Box sx={{ mb: 3 }}>
               <NetworkingStep
