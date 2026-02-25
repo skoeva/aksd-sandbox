@@ -82,6 +82,7 @@ function DeployButton({ project }: DeployButtonProps) {
         onClose={handleClose}
         maxWidth="lg"
         fullWidth
+        aria-labelledby="deploy-wizard-dialog-title"
         PaperProps={{
           sx: {
             height: '90vh',

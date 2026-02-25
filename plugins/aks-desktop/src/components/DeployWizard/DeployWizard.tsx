@@ -214,7 +214,12 @@ export default function DeployWizard({
   return (
     // Todo: noScroll could be done like this? <Container maxWidth="lg" sx={{ py: 3, overflow: 'hidden' }}>
     <Container maxWidth="lg" sx={{ py: 3 }}>
-      <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
+      <Typography
+        id="deploy-wizard-dialog-title"
+        variant="h4"
+        gutterBottom
+        sx={{ fontWeight: 600, mb: 2 }}
+      >
         {t('Deploy Application')}
       </Typography>
       <Card>
