@@ -46,7 +46,7 @@ describe('useChartData', () => {
 
   test('returns empty data and no loading when deployment is not selected', async () => {
     const { result } = renderHook(() =>
-      useChartData('', 'test-namespace', 'test-cluster', 'test-sub', 'test-rg')
+      useChartData('', 'test-namespace', 'test-cluster', 'test-sub', 'test-rg', 86400, 7200)
     );
 
     expect(result.current.chartData).toHaveLength(0);
@@ -56,7 +56,7 @@ describe('useChartData', () => {
 
   test('returns empty data when namespace is missing', async () => {
     const { result } = renderHook(() =>
-      useChartData('test-deployment', '', 'test-cluster', 'test-sub', 'test-rg')
+      useChartData('test-deployment', '', 'test-cluster', 'test-sub', 'test-rg', 86400, 7200)
     );
 
     expect(result.current.chartData).toHaveLength(0);
@@ -65,7 +65,24 @@ describe('useChartData', () => {
 
   test('returns empty data when subscription is missing', async () => {
     const { result } = renderHook(() =>
-      useChartData('test-deployment', 'test-namespace', 'test-cluster', undefined, 'test-rg')
+      useChartData(
+        'test-deployment',
+        'test-namespace',
+        'test-cluster',
+        undefined,
+        'test-rg',
+        86400,
+        7200
+      )
+    );
+
+    expect(result.current.chartData).toHaveLength(0);
+    expect(result.current.loading).toBe(false);
+  });
+
+  test('returns empty data when cluster is missing', async () => {
+    const { result } = renderHook(() =>
+      useChartData('test-deployment', 'test-namespace', '', 'test-sub', 'test-rg', 86400, 7200)
     );
 
     expect(result.current.chartData).toHaveLength(0);
@@ -98,7 +115,15 @@ describe('useChartData', () => {
       .mockResolvedValueOnce(mockCpuResults);
 
     const { result } = renderHook(() =>
-      useChartData('test-deployment', 'test-namespace', 'test-cluster', 'test-sub', 'test-rg')
+      useChartData(
+        'test-deployment',
+        'test-namespace',
+        'test-cluster',
+        'test-sub',
+        'test-rg',
+        86400,
+        7200
+      )
     );
 
     // Initially loading
@@ -130,7 +155,15 @@ describe('useChartData', () => {
     mockGetPrometheusEndpoint.mockRejectedValue(new Error('Failed to get Prometheus endpoint'));
 
     const { result } = renderHook(() =>
-      useChartData('test-deployment', 'test-namespace', 'test-cluster', 'test-sub', 'test-rg')
+      useChartData(
+        'test-deployment',
+        'test-namespace',
+        'test-cluster',
+        'test-sub',
+        'test-rg',
+        86400,
+        7200
+      )
     );
 
     await waitFor(() => {
@@ -145,7 +178,15 @@ describe('useChartData', () => {
     mockQueryPrometheus.mockResolvedValue([{ values: [] }]);
 
     const { result } = renderHook(() =>
-      useChartData('test-deployment', 'test-namespace', 'test-cluster', 'test-sub', undefined)
+      useChartData(
+        'test-deployment',
+        'test-namespace',
+        'test-cluster',
+        'test-sub',
+        undefined,
+        86400,
+        7200
+      )
     );
 
     await waitFor(() => {
@@ -160,7 +201,15 @@ describe('useChartData', () => {
     mockQueryPrometheus.mockResolvedValue([]);
 
     const { result } = renderHook(() =>
-      useChartData('test-deployment', 'test-namespace', 'test-cluster', 'test-sub', 'test-rg')
+      useChartData(
+        'test-deployment',
+        'test-namespace',
+        'test-cluster',
+        'test-sub',
+        'test-rg',
+        86400,
+        7200
+      )
     );
 
     await waitFor(() => {
@@ -176,7 +225,15 @@ describe('useChartData', () => {
 
     const { result, rerender } = renderHook(
       ({ deployment }) =>
-        useChartData(deployment, 'test-namespace', 'test-cluster', 'test-sub', 'test-rg'),
+        useChartData(
+          deployment,
+          'test-namespace',
+          'test-cluster',
+          'test-sub',
+          'test-rg',
+          86400,
+          7200
+        ),
       { initialProps: { deployment: 'deployment-1' } }
     );
 
@@ -194,20 +251,19 @@ describe('useChartData', () => {
     });
   });
 
-  test('returns empty data when cluster is missing', async () => {
-    const { result } = renderHook(() =>
-      useChartData('test-deployment', 'test-namespace', '', 'test-sub', 'test-rg')
-    );
-
-    expect(result.current.chartData).toHaveLength(0);
-    expect(result.current.loading).toBe(false);
-  });
-
   test('handles non-Error thrown exceptions', async () => {
     mockGetPrometheusEndpoint.mockRejectedValue('string error');
 
     const { result } = renderHook(() =>
-      useChartData('test-deployment', 'test-namespace', 'test-cluster', 'test-sub', 'test-rg')
+      useChartData(
+        'test-deployment',
+        'test-namespace',
+        'test-cluster',
+        'test-sub',
+        'test-rg',
+        86400,
+        7200
+      )
     );
 
     await waitFor(() => {
@@ -222,7 +278,15 @@ describe('useChartData', () => {
     mockGetClusterResourceIdAndGroup.mockResolvedValue(null as any);
 
     const { result } = renderHook(() =>
-      useChartData('test-deployment', 'test-namespace', 'test-cluster', 'test-sub', undefined)
+      useChartData(
+        'test-deployment',
+        'test-namespace',
+        'test-cluster',
+        'test-sub',
+        undefined,
+        86400,
+        7200
+      )
     );
 
     await waitFor(() => {
@@ -257,7 +321,15 @@ describe('useChartData', () => {
       .mockResolvedValueOnce(mockCpuResults);
 
     const { result } = renderHook(() =>
-      useChartData('test-deployment', 'test-namespace', 'test-cluster', 'test-sub', 'test-rg')
+      useChartData(
+        'test-deployment',
+        'test-namespace',
+        'test-cluster',
+        'test-sub',
+        'test-rg',
+        86400,
+        7200
+      )
     );
 
     await waitFor(() => {
@@ -289,7 +361,15 @@ describe('useChartData', () => {
       .mockResolvedValueOnce(mockCpuResults);
 
     const { result } = renderHook(() =>
-      useChartData('test-deployment', 'test-namespace', 'test-cluster', 'test-sub', 'test-rg')
+      useChartData(
+        'test-deployment',
+        'test-namespace',
+        'test-cluster',
+        'test-sub',
+        'test-rg',
+        86400,
+        7200
+      )
     );
 
     await waitFor(() => {
@@ -305,7 +385,15 @@ describe('useChartData', () => {
     mockQueryPrometheus.mockResolvedValue([{ values: [] }]);
 
     const { result } = renderHook(() =>
-      useChartData('test-deployment', 'test-namespace', 'test-cluster', 'test-sub', 'provided-rg')
+      useChartData(
+        'test-deployment',
+        'test-namespace',
+        'test-cluster',
+        'test-sub',
+        'provided-rg',
+        86400,
+        7200
+      )
     );
 
     await waitFor(() => {
@@ -325,7 +413,9 @@ describe('useChartData', () => {
   test('passes correct query parameters to queryPrometheus', async () => {
     mockQueryPrometheus.mockResolvedValue([{ values: [] }]);
 
-    renderHook(() => useChartData('my-app', 'my-namespace', 'my-cluster', 'my-sub', 'my-rg'));
+    renderHook(() =>
+      useChartData('my-app', 'my-namespace', 'my-cluster', 'my-sub', 'my-rg', 86400, 3600)
+    );
 
     await waitFor(() => {
       expect(mockQueryPrometheus).toHaveBeenCalled();
@@ -339,7 +429,7 @@ describe('useChartData', () => {
       ),
       expect.any(Number),
       expect.any(Number),
-      7200,
+      3600,
       'my-sub'
     );
 
@@ -349,9 +439,64 @@ describe('useChartData', () => {
       expect.stringContaining('my-namespace'),
       expect.any(Number),
       expect.any(Number),
-      7200,
+      3600,
       'my-sub'
     );
+  });
+
+  test('passes custom timeRangeSecs and step to queryPrometheus', async () => {
+    mockQueryPrometheus.mockResolvedValue([{ values: [] }]);
+    const now = Math.floor(Date.now() / 1000);
+
+    renderHook(() =>
+      useChartData('my-app', 'my-namespace', 'my-cluster', 'my-sub', 'my-rg', 7200, 900)
+    );
+
+    await waitFor(() => {
+      expect(mockQueryPrometheus).toHaveBeenCalled();
+    });
+
+    // step should be 900 (2-hour/15-min-resolution as used by ScalingCard)
+    expect(mockQueryPrometheus).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(String),
+      expect.toSatisfy((start: number) => now - start <= 7200 + 5), // within 5s of expected
+      expect.any(Number),
+      900,
+      'my-sub'
+    );
+  });
+
+  test('custom timeRangeSecs and step produce separate cache entries', async () => {
+    const now = Math.floor(Date.now() / 1000);
+    mockQueryPrometheus
+      .mockResolvedValueOnce([{ values: [[now, '2']] }]) // 24h replica
+      .mockResolvedValueOnce([{ values: [[now, '30']] }]) // 24h cpu
+      .mockResolvedValueOnce([{ values: [[now, '5']] }]) // 2h replica
+      .mockResolvedValueOnce([{ values: [[now, '60']] }]); // 2h cpu
+
+    // First render with 24h/1h-step
+    const { unmount } = renderHook(() =>
+      useChartData('my-app', 'my-namespace', 'my-cluster', 'my-sub', 'my-rg', 86400, 3600)
+    );
+
+    await waitFor(() => {
+      expect(mockQueryPrometheus).toHaveBeenCalledTimes(2);
+    });
+
+    unmount();
+
+    // Second render with 2h/15min-step — should not reuse the cached data
+    const { result } = renderHook(() =>
+      useChartData('my-app', 'my-namespace', 'my-cluster', 'my-sub', 'my-rg', 7200, 900)
+    );
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    expect(mockQueryPrometheus).toHaveBeenCalledTimes(4); // fetched again, no cache hit
+    expect(result.current.chartData[0].Replicas).toBe(5);
   });
 
   test('returns cached data without re-fetching within TTL', async () => {
@@ -362,7 +507,15 @@ describe('useChartData', () => {
       .mockResolvedValueOnce([{ values: [[now, '30']] }]); // cpu
 
     const { result, unmount } = renderHook(() =>
-      useChartData('test-deployment', 'test-namespace', 'test-cluster', 'test-sub', 'test-rg')
+      useChartData(
+        'test-deployment',
+        'test-namespace',
+        'test-cluster',
+        'test-sub',
+        'test-rg',
+        86400,
+        7200
+      )
     );
 
     await waitFor(() => {
@@ -376,7 +529,15 @@ describe('useChartData', () => {
     unmount();
 
     const { result: result2 } = renderHook(() =>
-      useChartData('test-deployment', 'test-namespace', 'test-cluster', 'test-sub', 'test-rg')
+      useChartData(
+        'test-deployment',
+        'test-namespace',
+        'test-cluster',
+        'test-sub',
+        'test-rg',
+        86400,
+        7200
+      )
     );
 
     await waitFor(() => {
@@ -396,7 +557,15 @@ describe('useChartData', () => {
       .mockResolvedValueOnce([{ values: [[now, '60']] }]); // rg-b cpu
 
     const { result, unmount } = renderHook(() =>
-      useChartData('test-deployment', 'test-namespace', 'test-cluster', 'test-sub', 'rg-a')
+      useChartData(
+        'test-deployment',
+        'test-namespace',
+        'test-cluster',
+        'test-sub',
+        'rg-a',
+        86400,
+        7200
+      )
     );
 
     await waitFor(() => {
@@ -411,7 +580,15 @@ describe('useChartData', () => {
     unmount();
 
     const { result: result2 } = renderHook(() =>
-      useChartData('test-deployment', 'test-namespace', 'test-cluster', 'test-sub', 'rg-b')
+      useChartData(
+        'test-deployment',
+        'test-namespace',
+        'test-cluster',
+        'test-sub',
+        'rg-b',
+        86400,
+        7200
+      )
     );
 
     await waitFor(() => {
@@ -429,7 +606,15 @@ describe('useChartData', () => {
 
     const { result, rerender } = renderHook(
       ({ deployment }) =>
-        useChartData(deployment, 'test-namespace', 'test-cluster', 'test-sub', 'test-rg'),
+        useChartData(
+          deployment,
+          'test-namespace',
+          'test-cluster',
+          'test-sub',
+          'test-rg',
+          86400,
+          7200
+        ),
       { initialProps: { deployment: 'deploy-a' } }
     );
 
@@ -458,7 +643,15 @@ describe('useChartData', () => {
       .mockResolvedValueOnce([{ values: [[now, '50']] }]);
 
     const { result } = renderHook(() =>
-      useChartData('test-deployment', 'test-namespace', 'test-cluster', 'test-sub', 'test-rg')
+      useChartData(
+        'test-deployment',
+        'test-namespace',
+        'test-cluster',
+        'test-sub',
+        'test-rg',
+        86400,
+        7200
+      )
     );
 
     await waitFor(() => {
@@ -501,7 +694,15 @@ describe('useChartData', () => {
 
     const { result, rerender } = renderHook(
       ({ deployment }) =>
-        useChartData(deployment, 'test-namespace', 'test-cluster', 'test-sub', 'test-rg'),
+        useChartData(
+          deployment,
+          'test-namespace',
+          'test-cluster',
+          'test-sub',
+          'test-rg',
+          86400,
+          7200
+        ),
       { initialProps: { deployment: 'deployment-1' } }
     );
 

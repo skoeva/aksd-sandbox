@@ -32,7 +32,7 @@ export interface UseChartDataResult {
 
 // Module-level caches persist across component remounts to avoid refetching
 // the same chart data and endpoint repeatedly in the same session.
-let chartDataCache: { key: string; data: ChartDataPoint[]; timestamp: number } | null = null;
+const chartDataCache = new Map<string, { data: ChartDataPoint[]; timestamp: number }>();
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 // Cache for Prometheus endpoint (keyed by resourceGroup:cluster:subscription)
@@ -40,28 +40,28 @@ const promEndpointCache = new Map<string, string>();
 
 /** Clears all module-level caches. Exported for testing only. */
 export function clearChartDataCaches(): void {
-  chartDataCache = null;
+  chartDataCache.clear();
   promEndpointCache.clear();
 }
 
 function getCachedChartData(cacheKey: string): ChartDataPoint[] | null {
-  if (!chartDataCache || chartDataCache.key !== cacheKey) {
-    return null;
-  }
-
-  return Date.now() - chartDataCache.timestamp < CACHE_TTL_MS ? chartDataCache.data : null;
+  const entry = chartDataCache.get(cacheKey);
+  if (!entry) return null;
+  return Date.now() - entry.timestamp < CACHE_TTL_MS ? entry.data : null;
 }
 
 /**
  * Fetches real chart data from Prometheus for scaling metrics visualization.
  *
- * Queries Prometheus for replica count and CPU usage history over the last 24 hours.
+ * Queries Prometheus for replica count and CPU usage history.
  *
  * @param selectedDeployment - Name of the currently selected deployment.
  * @param namespace - The Kubernetes namespace.
  * @param cluster - The cluster name.
  * @param subscription - The Azure subscription ID.
  * @param resourceGroupLabel - The resource group from namespace labels (optional).
+ * @param timeRangeSecs - How far back to query, in seconds.
+ * @param step - Query resolution step in seconds.
  * @returns Object containing chartData array, loading state, and error state.
  */
 export const useChartData = (
@@ -69,7 +69,9 @@ export const useChartData = (
   namespace: string,
   cluster: string,
   subscription: string | undefined,
-  resourceGroupLabel: string | undefined
+  resourceGroupLabel: string | undefined,
+  timeRangeSecs: number,
+  step: number
 ): UseChartDataResult => {
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -113,8 +115,8 @@ export const useChartData = (
       }
 
       // Return cached data if the same parameters were queried recently.
-      // Include resolved resource group to avoid cross-resource-group cache collisions.
-      const cacheKey = `${selectedDeployment}:${namespace}:${cluster}:${subscription}:${resourceGroup}`;
+      // Include resolved resource group and time range to avoid cache collisions.
+      const cacheKey = `${selectedDeployment}:${namespace}:${cluster}:${subscription}:${resourceGroup}:${timeRangeSecs}:${step}`;
       const cachedChartData = getCachedChartData(cacheKey);
       if (cachedChartData) {
         applyIfLatest(() => {
@@ -132,8 +134,7 @@ export const useChartData = (
       }
 
       const end = Math.floor(Date.now() / 1000);
-      const start = end - 86400; // Last 24 hours
-      const step = 7200; // Data point every 2 hours
+      const start = end - timeRangeSecs;
 
       // Query replica count and CPU usage in parallel
       const replicaQuery = `kube_deployment_spec_replicas{deployment="${selectedDeployment}",namespace="${namespace}"}`;
@@ -176,7 +177,7 @@ export const useChartData = (
         });
       });
 
-      chartDataCache = { key: cacheKey, data: mergedData, timestamp: Date.now() };
+      chartDataCache.set(cacheKey, { data: mergedData, timestamp: Date.now() });
       applyIfLatest(() => setChartData(mergedData));
     } catch (err) {
       console.error('Failed to fetch chart data from Prometheus:', err);
@@ -188,7 +189,15 @@ export const useChartData = (
     } finally {
       applyIfLatest(() => setLoading(false));
     }
-  }, [namespace, selectedDeployment, cluster, subscription, resourceGroupLabel]);
+  }, [
+    namespace,
+    selectedDeployment,
+    cluster,
+    subscription,
+    resourceGroupLabel,
+    timeRangeSecs,
+    step,
+  ]);
 
   useEffect(() => {
     fetchChartData();

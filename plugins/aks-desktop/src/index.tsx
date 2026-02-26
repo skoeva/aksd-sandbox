@@ -31,7 +31,7 @@ import LogsTab from './components/LogsTab/LogsTab';
 import MetricsCard from './components/Metrics/MetricsCard';
 import MetricsTab from './components/MetricsTab/MetricsTab';
 import ScalingCard from './components/Scaling/ScalingCard';
-import ScalingTab from './components/ScalingTab/ScalingTab';
+import ScalingTab from './components/Scaling/ScalingTab';
 import { getLoginStatus } from './utils/azure/az-cli';
 import { isAksProject } from './utils/shared/isAksProject';
 import { azureTheme } from './utils/shared/theme';

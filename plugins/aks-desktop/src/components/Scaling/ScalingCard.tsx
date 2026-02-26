@@ -27,6 +27,10 @@ export interface ProjectDefinition {
 /** Alias for ProjectDefinition. */
 type Project = ProjectDefinition;
 
+// 2 hours at 15-minute resolution (8 data points)
+const TIME_RANGE_SECS = 7200;
+const STEP_SECS = 900;
+
 /**
  * Props for the {@link ScalingCard} component.
  */
@@ -66,11 +70,15 @@ function ScalingCard({ project }: ScalingCardProps) {
     chartData,
     loading: chartLoading,
     error: chartError,
-  } = useChartData(selectedDeployment, namespace, cluster, subscription, resourceGroupLabel);
-
-  const handleDeploymentChange = (deploymentName: string) => {
-    setSelectedDeployment(deploymentName);
-  };
+  } = useChartData(
+    selectedDeployment,
+    namespace,
+    cluster,
+    subscription,
+    resourceGroupLabel,
+    TIME_RANGE_SECS,
+    STEP_SECS
+  );
 
   return (
     <Box
@@ -90,16 +98,14 @@ function ScalingCard({ project }: ScalingCardProps) {
           selectedDeployment={selectedDeployment}
           deployments={deployments}
           loading={loading}
-          onDeploymentChange={handleDeploymentChange}
+          onDeploymentChange={setSelectedDeployment}
         />
       </Box>
 
       {error && (
-        <Box mb={2}>
-          <Alert severity="warning">
-            <Typography variant="body2">{error}</Typography>
-          </Alert>
-        </Box>
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
       )}
 
       {selectedDeployment && (

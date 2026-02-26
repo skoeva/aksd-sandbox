@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the Apache 2.0.
 
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 // Mock the Headlamp K8s API — vi.hoisted ensures the variable is available when vi.mock is hoisted
@@ -127,6 +127,51 @@ describe('useDeployments', () => {
     expect(result.current.deployments).toHaveLength(0);
     expect(result.current.error).toBe('Failed to fetch deployments');
     expect(result.current.loading).toBe(false);
+  });
+
+  test('setSelectedDeployment updates the selected deployment', () => {
+    const mockDeployments = [
+      createMockDeployment('app-1', 'test-namespace'),
+      createMockDeployment('app-2', 'test-namespace'),
+    ];
+
+    mockApiList.mockImplementation((successCb: Function) => {
+      return () => {
+        successCb(mockDeployments);
+      };
+    });
+
+    const { result } = renderHook(() => useDeployments('test-namespace', 'test-cluster'));
+
+    expect(result.current.selectedDeployment).toBe('app-1');
+
+    act(() => result.current.setSelectedDeployment('app-2'));
+
+    expect(result.current.selectedDeployment).toBe('app-2');
+  });
+
+  test('does not overwrite a manually selected deployment when data reloads', () => {
+    const mockDeployments = [
+      createMockDeployment('app-1', 'test-namespace'),
+      createMockDeployment('app-2', 'test-namespace'),
+    ];
+
+    let capturedSuccessCb: Function;
+    mockApiList.mockImplementation((successCb: Function) => {
+      capturedSuccessCb = successCb;
+      return () => {
+        successCb(mockDeployments);
+      };
+    });
+
+    const { result } = renderHook(() => useDeployments('test-namespace', 'test-cluster'));
+
+    expect(result.current.selectedDeployment).toBe('app-1');
+
+    act(() => result.current.setSelectedDeployment('app-2'));
+    act(() => capturedSuccessCb(mockDeployments));
+
+    expect(result.current.selectedDeployment).toBe('app-2');
   });
 
   test('handles deployments with missing status fields', () => {

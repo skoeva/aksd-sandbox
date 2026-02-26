@@ -72,8 +72,8 @@ export const ScalingChart: React.FC<ScalingChartProps> = ({ chartData, loading, 
     return (
       <Box display="flex" alignItems="center" justifyContent="center" height="100%" p={2}>
         <Alert severity="warning" sx={{ maxWidth: 600 }}>
-          <AlertTitle>Scaling Chart Unavailable</AlertTitle>
-          <Typography variant="body2">{error}</Typography>
+          <AlertTitle>{t('Scaling Chart Unavailable')}</AlertTitle>
+          {error}
         </Alert>
       </Box>
     );
