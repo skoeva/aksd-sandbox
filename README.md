@@ -92,6 +92,10 @@ To get started with AKS desktop, follow these steps:
    npm run build
    ```
 
+## Documentation
+
+- [Cluster Requirements](docs/cluster-requirements.md) — What your AKS cluster needs for the best AKS desktop experience
+
 ## Contributing
 
 Check out the [CONTRIBUTING.md](CONTRIBUTING.md) file. More
