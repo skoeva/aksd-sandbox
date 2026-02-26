@@ -125,6 +125,25 @@ extends:
                   make --version | head -n 1
                   echo "=== INSTALL MAKE END ==="
                 displayName: "Install make build tool"
+              - bash: |
+                  set -e
+                  echo "=== INSTALL BINUTILS START ==="
+                  if command -v ld >/dev/null 2>&1; then
+                    echo "binutils is already installed, skipping install."
+                  else
+                    echo "binutils not found, installing via tdnf..."
+                    if [ "$(id -u)" -eq 0 ]; then
+                      tdnf install -y binutils
+                    else
+                      sudo -n tdnf install -y binutils
+                    fi
+                    echo "binutils installed successfully."
+                  fi
+
+                  echo "binutils version:"
+                  ld --version | head -n 1
+                  echo "=== INSTALL BINUTILS END ==="
+                displayName: "Install binutils"
               # Build the Windows application
               - bash: |
                   echo "=== BUILD DEBUG START ==="
