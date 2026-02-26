@@ -106,6 +106,25 @@ extends:
                   git log --oneline -1 || echo "Git not available"
                   echo "=== END CHECKOUT DEBUG ==="
                 displayName: "Debug: Checkout"
+              - bash: |
+                  set -e
+                  echo "=== INSTALL MAKE START ==="
+                  if command -v make >/dev/null 2>&1; then
+                    echo "make is already installed, skipping install."
+                  else
+                    echo "make not found, installing via tdnf..."
+                    if [ "$(id -u)" -eq 0 ]; then
+                      tdnf install -y make
+                    else
+                      sudo -n tdnf install -y make
+                    fi
+                    echo "make installed successfully."
+                  fi
+
+                  echo "make version:"
+                  make --version | head -n 1
+                  echo "=== INSTALL MAKE END ==="
+                displayName: "Install make build tool"
               # Build the Windows application
               - bash: |
                   echo "=== BUILD DEBUG START ==="
