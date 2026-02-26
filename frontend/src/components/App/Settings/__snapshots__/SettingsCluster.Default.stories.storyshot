@@ -224,7 +224,6 @@
             class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-9 MuiGrid-grid-md-10 css-1dbzfsd-MuiGrid-root"
           >
             <div
-              aria-labelledby="default-namespace-label"
               class="MuiFormControl-root MuiTextField-root css-1u3bzj6-MuiFormControl-root-MuiTextField-root"
             >
               <div
@@ -233,6 +232,7 @@
                 <input
                   aria-describedby=":mock-test-id:"
                   aria-invalid="false"
+                  aria-labelledby="default-namespace-label"
                   class="MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall MuiInputBase-inputAdornedEnd css-19qh8xo-MuiInputBase-input-MuiOutlinedInput-input"
                   id=":mock-test-id:"
                   placeholder="default"

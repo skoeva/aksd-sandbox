@@ -410,9 +410,11 @@ export default function SettingsCluster() {
                     setUserDefaultNamespace(value);
                   }}
                   value={userDefaultNamespace}
-                  aria-labelledby={defaultNamespaceLabelID}
                   placeholder={defaultNamespace}
                   error={!isValidDefaultNamespace}
+                  inputProps={{
+                    'aria-labelledby': defaultNamespaceLabelID,
+                  }}
                   helperText={
                     isValidDefaultNamespace
                       ? t(
