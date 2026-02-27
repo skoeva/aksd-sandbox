@@ -277,6 +277,7 @@
   "No cluster selected": "",
   "Failed to fetch cluster info": "",
   "Failed to fetch managed namespaces": "",
+  "Failed to fetch managed namespace details": "",
   "Failed to update managed namespace": "",
   "Updating": "",
   "Update": "",

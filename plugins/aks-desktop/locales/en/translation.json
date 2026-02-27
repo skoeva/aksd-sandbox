@@ -270,6 +270,7 @@
   "No cluster selected": "No cluster selected",
   "Failed to fetch cluster info": "Failed to fetch cluster info",
   "Failed to fetch managed namespaces": "Failed to fetch managed namespaces",
+  "Failed to fetch managed namespace details": "Failed to fetch managed namespace details",
   "Failed to update managed namespace": "Failed to update managed namespace",
   "Updating": "Updating",
   "Update": "Update",
