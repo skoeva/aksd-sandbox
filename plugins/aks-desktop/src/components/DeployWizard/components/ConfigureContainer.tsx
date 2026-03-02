@@ -21,7 +21,7 @@ import {
 } from '@mui/material';
 import React from 'react';
 import { ContainerConfig } from '../hooks/useContainerConfiguration';
-import { bumpWithUnit, setFromInput } from './types';
+import { setFromInput } from './types';
 
 interface ConfigureContainerProps {
   containerConfig: {
@@ -762,7 +762,11 @@ export default function ConfigureContainer({ containerConfig }: ConfigureContain
               }}
             >
               <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                <Box
+                  component="label"
+                  htmlFor="cpu-request-input"
+                  sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}
+                >
                   <Typography variant="caption" color="text.secondary">
                     {t('CPU request')}
                   </Typography>
@@ -777,52 +781,30 @@ export default function ConfigureContainer({ containerConfig }: ConfigureContain
                     </IconButton>
                   </Tooltip>
                 </Box>
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                  <TextField
-                    value={containerConfig.config.cpuRequest}
-                    onChange={e =>
-                      setFromInput(e.target.value, 'm', val =>
-                        containerConfig.setConfig(c => ({ ...c, cpuRequest: val }))
-                      )
-                    }
-                    placeholder="100m"
-                    InputProps={{
-                      endAdornment: <InputAdornment position="end">m</InputAdornment>,
-                    }}
-                    disabled={!containerConfig.config.enableResources}
-                    sx={{ flex: 1 }}
-                  />
-                  <IconButton
-                    size="small"
-                    aria-label={t('decrease')}
-                    onClick={() =>
-                      containerConfig.setConfig(c => ({
-                        ...c,
-                        cpuRequest: bumpWithUnit(c.cpuRequest || '100m', -50, 'm', 1),
-                      }))
-                    }
-                    disabled={!containerConfig.config.enableResources}
-                  >
-                    <Icon icon="mdi:minus" />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    aria-label={t('increase')}
-                    onClick={() =>
-                      containerConfig.setConfig(c => ({
-                        ...c,
-                        cpuRequest: bumpWithUnit(c.cpuRequest || '100m', 50, 'm', 1),
-                      }))
-                    }
-                    disabled={!containerConfig.config.enableResources}
-                  >
-                    <Icon icon="mdi:plus" />
-                  </IconButton>
-                </Box>
+                <TextField
+                  id="cpu-request-input"
+                  type="number"
+                  inputProps={{ step: 50, min: 1 }}
+                  value={containerConfig.config.cpuRequest?.replace(/m$/, '')}
+                  onChange={e =>
+                    setFromInput(e.target.value, 'm', val =>
+                      containerConfig.setConfig(c => ({ ...c, cpuRequest: val }))
+                    )
+                  }
+                  InputProps={{
+                    endAdornment: <InputAdornment position="end">{t('millicores')}</InputAdornment>,
+                  }}
+                  disabled={!containerConfig.config.enableResources}
+                  fullWidth
+                />
               </Box>
 
               <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                <Box
+                  component="label"
+                  htmlFor="cpu-limit-input"
+                  sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}
+                >
                   <Typography variant="caption" color="text.secondary">
                     {t('CPU limit')}
                   </Typography>
@@ -837,52 +819,29 @@ export default function ConfigureContainer({ containerConfig }: ConfigureContain
                     </IconButton>
                   </Tooltip>
                 </Box>
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                  <TextField
-                    value={containerConfig.config.cpuLimit}
-                    onChange={e =>
-                      setFromInput(e.target.value, 'm', val =>
-                        containerConfig.setConfig(c => ({ ...c, cpuLimit: val }))
-                      )
-                    }
-                    placeholder="500m"
-                    InputProps={{
-                      endAdornment: <InputAdornment position="end">m</InputAdornment>,
-                    }}
-                    disabled={!containerConfig.config.enableResources}
-                    sx={{ flex: 1 }}
-                  />
-                  <IconButton
-                    size="small"
-                    aria-label={t('decrease')}
-                    onClick={() =>
-                      containerConfig.setConfig(c => ({
-                        ...c,
-                        cpuLimit: bumpWithUnit(c.cpuLimit || '500m', -50, 'm', 1),
-                      }))
-                    }
-                    disabled={!containerConfig.config.enableResources}
-                  >
-                    <Icon icon="mdi:minus" />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    aria-label={t('increase')}
-                    onClick={() =>
-                      containerConfig.setConfig(c => ({
-                        ...c,
-                        cpuLimit: bumpWithUnit(c.cpuLimit || '500m', 50, 'm', 1),
-                      }))
-                    }
-                    disabled={!containerConfig.config.enableResources}
-                  >
-                    <Icon icon="mdi:plus" />
-                  </IconButton>
-                </Box>
+                <TextField
+                  id="cpu-limit-input"
+                  type="number"
+                  inputProps={{ step: 50, min: 1 }}
+                  value={containerConfig.config.cpuLimit?.replace(/m$/, '')}
+                  onChange={e =>
+                    setFromInput(e.target.value, 'm', val =>
+                      containerConfig.setConfig(c => ({ ...c, cpuLimit: val }))
+                    )
+                  }
+                  InputProps={{
+                    endAdornment: <InputAdornment position="end">{t('millicores')}</InputAdornment>,
+                  }}
+                  disabled={!containerConfig.config.enableResources}
+                  fullWidth
+                />
               </Box>
-
               <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                <Box
+                  component="label"
+                  htmlFor="memory-request-input"
+                  sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}
+                >
                   <Typography variant="caption" color="text.secondary">
                     {t('Memory request')}
                   </Typography>
@@ -897,52 +856,30 @@ export default function ConfigureContainer({ containerConfig }: ConfigureContain
                     </IconButton>
                   </Tooltip>
                 </Box>
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                  <TextField
-                    value={containerConfig.config.memoryRequest}
-                    onChange={e =>
-                      setFromInput(e.target.value, 'Mi', val =>
-                        containerConfig.setConfig(c => ({ ...c, memoryRequest: val }))
-                      )
-                    }
-                    placeholder="128Mi"
-                    InputProps={{
-                      endAdornment: <InputAdornment position="end">Mi</InputAdornment>,
-                    }}
-                    disabled={!containerConfig.config.enableResources}
-                    sx={{ flex: 1 }}
-                  />
-                  <IconButton
-                    size="small"
-                    aria-label={t('decrease')}
-                    onClick={() =>
-                      containerConfig.setConfig(c => ({
-                        ...c,
-                        memoryRequest: bumpWithUnit(c.memoryRequest || '128Mi', -64, 'Mi', 1),
-                      }))
-                    }
-                    disabled={!containerConfig.config.enableResources}
-                  >
-                    <Icon icon="mdi:minus" />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    aria-label={t('increase')}
-                    onClick={() =>
-                      containerConfig.setConfig(c => ({
-                        ...c,
-                        memoryRequest: bumpWithUnit(c.memoryRequest || '128Mi', 64, 'Mi', 1),
-                      }))
-                    }
-                    disabled={!containerConfig.config.enableResources}
-                  >
-                    <Icon icon="mdi:plus" />
-                  </IconButton>
-                </Box>
+                <TextField
+                  id="memory-request-input"
+                  type="number"
+                  inputProps={{ step: 64, min: 1 }}
+                  value={containerConfig.config.memoryRequest?.replace(/Mi$/, '')}
+                  onChange={e =>
+                    setFromInput(e.target.value, 'Mi', val =>
+                      containerConfig.setConfig(c => ({ ...c, memoryRequest: val }))
+                    )
+                  }
+                  InputProps={{
+                    endAdornment: <InputAdornment position="end">{t('mebibytes')}</InputAdornment>,
+                  }}
+                  disabled={!containerConfig.config.enableResources}
+                  fullWidth
+                />
               </Box>
 
               <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                <Box
+                  component="label"
+                  htmlFor="memory-limit-input"
+                  sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}
+                >
                   <Typography variant="caption" color="text.secondary">
                     {t('Memory limit')}
                   </Typography>
@@ -957,48 +894,22 @@ export default function ConfigureContainer({ containerConfig }: ConfigureContain
                     </IconButton>
                   </Tooltip>
                 </Box>
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                  <TextField
-                    value={containerConfig.config.memoryLimit}
-                    onChange={e =>
-                      setFromInput(e.target.value, 'Mi', val =>
-                        containerConfig.setConfig(c => ({ ...c, memoryLimit: val }))
-                      )
-                    }
-                    placeholder="512Mi"
-                    InputProps={{
-                      endAdornment: <InputAdornment position="end">Mi</InputAdornment>,
-                    }}
-                    disabled={!containerConfig.config.enableResources}
-                    sx={{ flex: 1 }}
-                  />
-                  <IconButton
-                    size="small"
-                    aria-label={t('decrease')}
-                    onClick={() =>
-                      containerConfig.setConfig(c => ({
-                        ...c,
-                        memoryLimit: bumpWithUnit(c.memoryLimit || '512Mi', -64, 'Mi', 1),
-                      }))
-                    }
-                    disabled={!containerConfig.config.enableResources}
-                  >
-                    <Icon icon="mdi:minus" />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    aria-label={t('increase')}
-                    onClick={() =>
-                      containerConfig.setConfig(c => ({
-                        ...c,
-                        memoryLimit: bumpWithUnit(c.memoryLimit || '512Mi', 64, 'Mi', 1),
-                      }))
-                    }
-                    disabled={!containerConfig.config.enableResources}
-                  >
-                    <Icon icon="mdi:plus" />
-                  </IconButton>
-                </Box>
+                <TextField
+                  id="memory-limit-input"
+                  type="number"
+                  inputProps={{ step: 64, min: 1 }}
+                  value={containerConfig.config.memoryLimit?.replace(/Mi$/, '')}
+                  onChange={e =>
+                    setFromInput(e.target.value, 'Mi', val =>
+                      containerConfig.setConfig(c => ({ ...c, memoryLimit: val }))
+                    )
+                  }
+                  InputProps={{
+                    endAdornment: <InputAdornment position="end">{t('mebibytes')}</InputAdornment>,
+                  }}
+                  disabled={!containerConfig.config.enableResources}
+                  fullWidth
+                />
               </Box>
             </Box>
             <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
@@ -1166,7 +1077,11 @@ export default function ConfigureContainer({ containerConfig }: ConfigureContain
                 </Box>
 
                 <Box sx={{ mt: 3 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                  <Box
+                    component="label"
+                    htmlFor="hpa-target-cpu-input"
+                    sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}
+                  >
                     <Typography variant="subtitle2">{t('Target CPU utilization')}</Typography>
                     <Tooltip
                       title={t(
@@ -1179,45 +1094,22 @@ export default function ConfigureContainer({ containerConfig }: ConfigureContain
                       </IconButton>
                     </Tooltip>
                   </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <IconButton
-                      size="small"
-                      onClick={() =>
-                        containerConfig.setConfig(c => ({
-                          ...c,
-                          hpaTargetCpu: Math.max(10, Math.min(95, c.hpaTargetCpu - 5)),
-                        }))
-                      }
-                    >
-                      <Icon icon="mdi:minus" />
-                    </IconButton>
-                    <TextField
-                      type="number"
-                      value={containerConfig.config.hpaTargetCpu}
-                      inputProps={{ min: 10, max: 95, step: 5 }}
-                      onChange={e =>
-                        containerConfig.setConfig(c => ({
-                          ...c,
-                          hpaTargetCpu: Math.max(10, Math.min(95, Number(e.target.value))),
-                        }))
-                      }
-                      InputProps={{
-                        endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                      }}
-                      sx={{ width: 120 }}
-                    />
-                    <IconButton
-                      size="small"
-                      onClick={() =>
-                        containerConfig.setConfig(c => ({
-                          ...c,
-                          hpaTargetCpu: Math.max(10, Math.min(95, c.hpaTargetCpu + 5)),
-                        }))
-                      }
-                    >
-                      <Icon icon="mdi:plus" />
-                    </IconButton>
-                  </Box>
+                  <TextField
+                    id="hpa-target-cpu-input"
+                    type="number"
+                    value={containerConfig.config.hpaTargetCpu}
+                    inputProps={{ min: 10, max: 95, step: 5 }}
+                    onChange={e =>
+                      containerConfig.setConfig(c => ({
+                        ...c,
+                        hpaTargetCpu: Math.max(10, Math.min(95, Number(e.target.value))),
+                      }))
+                    }
+                    InputProps={{
+                      endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                    }}
+                    sx={{ width: 120 }}
+                  />
 
                   {(containerConfig.config.hpaMinReplicas > containerConfig.config.hpaMaxReplicas ||
                     containerConfig.config.hpaTargetCpu < 10 ||
