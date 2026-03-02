@@ -6,7 +6,7 @@ import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { PageGrid, SectionBox } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import { useClustersConf } from '@kinvolk/headlamp-plugin/lib/k8s';
 import { Box, Button, Card, CardContent, CircularProgress, Typography } from '@mui/material';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
   checkNamespaceExists,
@@ -57,6 +57,7 @@ function CreateAKSProject() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [applicationName, setApplicationName] = useState('');
   const [cliSuggestions, setCliSuggestions] = useState<string[]>([]);
+  const stepContentRef = useRef<HTMLDivElement>(null);
 
   // Custom hooks
   const { formData, updateFormData } = useFormData();
@@ -150,6 +151,18 @@ function CreateAKSProject() {
   const handleStepClick = (step: number) => {
     setActiveStep(step);
   };
+
+  // Focus on the content when changing steps
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      const container = stepContentRef.current;
+      if (!container) return;
+      const focusable = container.querySelector<HTMLElement>(
+        'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"]):not([disabled])'
+      );
+      focusable?.focus();
+    });
+  }, [activeStep]);
 
   const handleSubmit = async () => {
     try {
@@ -812,7 +825,9 @@ function CreateAKSProject() {
               />
 
               {/* Step Content */}
-              <Box sx={{ p: 3 }}>{renderStepContent(activeStep)}</Box>
+              <Box ref={stepContentRef} sx={{ p: 3 }}>
+                {renderStepContent(activeStep)}
+              </Box>
 
               {/* Footer with navigation buttons */}
               <Box sx={{ p: 3, display: 'flex', alignItems: 'center' }}>
