@@ -32,6 +32,50 @@ const SOURCES = [
   },
 ];
 
+/** Terms that should be left as-is */
+const LOCKED_TERMS = [
+  // Product / brand names
+  'Kubernetes',
+  'Headlamp',
+  'Azure',
+  'GitHub',
+  'Docker',
+  'Prometheus',
+  'Iconify',
+
+  // CLI tools and config
+  'kubeconfig',
+  'kubectl',
+  'aks-preview',
+  'ManagedNamespacePreview',
+
+  // K8s API field names (camelCase identifiers shown in UI)
+  'ipBlock',
+  'namespaceSelector',
+  'podSelector',
+  'fieldRef',
+  'resourceFieldRef',
+
+  // K8s service types (config values)
+  'ClusterIP',
+  'LoadBalancer',
+  'NodePort',
+
+  // Technical status names
+  'OOMKilled',
+
+  // Data format names
+  'YAML',
+  'JSON',
+];
+
+/* Builds the `{Locked="…"}` comment for a value, or returns null if nothing matches. */
+function lockedComment(value) {
+  const matches = LOCKED_TERMS.filter((term) => value.includes(term));
+  if (matches.length === 0) return null;
+  return `{Locked=${matches.map((t) => `"${t}"`).join(',')}}`;
+}
+
 /* Returns the flat filename for a source/namespace pair, e.g. "frontend-translation.json". */
 function collectedFileName(source, ns) {
   return `${source}-${ns}.json`;
@@ -62,12 +106,19 @@ function collect() {
       const data = readJson(srcPath);
       if (!data) continue;
 
+      const output = {};
+      for (const [key, value] of Object.entries(data)) {
+        output[key] = value;
+        const comment = lockedComment(String(value));
+        if (comment) output[`_${key}.comment`] = comment;
+      }
+
       const outPath = path.join(
         OUTPUT_DIR,
         'en',
         collectedFileName(source.name, ns),
       );
-      writeJson(outPath, data);
+      writeJson(outPath, output);
       totalKeys += Object.keys(data).length;
       totalFiles++;
     }
@@ -104,8 +155,14 @@ function distribute() {
         const collected = readJson(collectedPath);
         if (!collected) continue;
 
+        const withoutComments = Object.fromEntries(
+          Object.entries(collected).filter(
+            ([k]) => !k.startsWith('_') || !k.endsWith('.comment'),
+          ),
+        );
+
         const targetPath = path.join(source.localesDir, lang, `${ns}.json`);
-        writeJson(targetPath, collected);
+        writeJson(targetPath, withoutComments);
         updated++;
       }
     }
