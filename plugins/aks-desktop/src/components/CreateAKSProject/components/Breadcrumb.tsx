@@ -4,7 +4,6 @@
 import { Icon } from '@iconify/react';
 import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { Box, Typography } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import React from 'react';
 import type { BreadcrumbProps } from '../types';
 
@@ -12,14 +11,13 @@ import type { BreadcrumbProps } from '../types';
  * Breadcrumb navigation component for multi-step forms
  */
 export const Breadcrumb: React.FC<BreadcrumbProps> = ({ steps, activeStep, onStepClick }) => {
-  const theme = useTheme();
   const { t } = useTranslation();
 
   return (
     <Box
       role="navigation"
       aria-label={t('Wizard steps')}
-      sx={{
+      sx={theme => ({
         width: '100%',
         borderBottom: `1px solid ${theme.palette.divider}`,
         display: 'flex',
@@ -30,7 +28,11 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({ steps, activeStep, onSte
         backgroundColor: theme.palette.background.muted,
         px: 3,
         py: 2,
-      }}
+        overflowX: 'auto',
+        [theme.breakpoints.down('md')]: {
+          flexDirection: 'column',
+        },
+      })}
     >
       {steps.map((label, index) => (
         <React.Fragment key={index}>
