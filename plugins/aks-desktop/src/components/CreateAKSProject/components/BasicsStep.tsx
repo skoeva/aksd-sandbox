@@ -304,7 +304,6 @@ export const BasicsStep: React.FC<BasicsStepProps> = ({
                     'Project name must contain only lowercase letters, numbers, and hyphens (no spaces)'
                   )
             }
-            endAdornment={<Icon icon="mdi:edit" />}
           />
         </FormControl>
 
