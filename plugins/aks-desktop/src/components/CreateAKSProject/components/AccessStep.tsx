@@ -116,7 +116,7 @@ export const AccessStep: React.FC<AccessStepProps> = ({
                         variant="caption"
                         color="text.secondary"
                         component="div"
-                        sx={{ fontSize: '0.7rem', lineHeight: 1.3, mt: 0.5 }}
+                        sx={{ fontSize: '0.7rem', lineHeight: 1.3, mt: 0.5, whiteSpace: 'normal' }}
                       >
                         {t(ROLE_DESCRIPTIONS[role])}
                       </Typography>
