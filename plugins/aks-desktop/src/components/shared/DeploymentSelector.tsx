@@ -3,29 +3,35 @@
 
 import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { CircularProgress, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material/styles';
 import React from 'react';
-import type { DeploymentInfo } from '../hooks/useDeployments';
 
 interface DeploymentSelectorProps {
   selectedDeployment: string;
-  deployments: DeploymentInfo[];
-  loading: boolean;
+  deployments: Array<{ name: string }>;
+  loading?: boolean;
   onDeploymentChange: (deploymentName: string) => void;
+  sx?: SxProps<Theme>;
 }
 
 /**
- * Dropdown selector for choosing a deployment to view scaling metrics
+ * Dropdown selector for choosing a deployment
  */
 export const DeploymentSelector: React.FC<DeploymentSelectorProps> = ({
   selectedDeployment,
   deployments,
-  loading,
+  loading = false,
   onDeploymentChange,
+  sx,
 }) => {
   const { t } = useTranslation();
 
   return (
-    <FormControl sx={{ minWidth: 200 }} size="small" variant="outlined">
+    <FormControl
+      sx={[{ minWidth: 200 }, ...(Array.isArray(sx) ? sx : sx ? [sx] : [])]}
+      size="small"
+      variant="outlined"
+    >
       <InputLabel>{t('Select Deployment')}</InputLabel>
       <Select
         value={selectedDeployment || ''}

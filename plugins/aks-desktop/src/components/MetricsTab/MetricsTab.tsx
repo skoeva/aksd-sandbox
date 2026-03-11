@@ -11,11 +11,7 @@ import {
   Box,
   Card,
   CircularProgress,
-  FormControl,
   Grid,
-  InputLabel,
-  MenuItem,
-  Select,
   Skeleton,
   Table,
   TableBody,
@@ -37,6 +33,7 @@ import {
 } from 'recharts';
 import { getClusterResourceIdAndGroup } from '../../utils/azure/az-cli';
 import { RESOURCE_GROUP_LABEL, SUBSCRIPTION_LABEL } from '../../utils/constants/projectLabels';
+import { DeploymentSelector } from '../shared/DeploymentSelector';
 import { getPrometheusEndpoint } from './getPrometheusEndpoint';
 import { queryPrometheus } from './queryPrometheus';
 
@@ -588,10 +585,6 @@ const MetricsTab: React.FC<MetricsTabProps> = ({ project }) => {
     return () => clearInterval(interval);
   }, [selectedDeployment, fetchMetrics, subscription]);
 
-  const handleDeploymentChange = (event: any) => {
-    setSelectedDeployment(event.target.value as string);
-  };
-
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -618,26 +611,12 @@ const MetricsTab: React.FC<MetricsTabProps> = ({ project }) => {
         <Typography variant="h5" sx={{ mb: 2 }}>
           {t('Application Metrics')}
         </Typography>
-        <FormControl sx={{ minWidth: 300 }}>
-          <InputLabel shrink>{t('Select Deployment')}</InputLabel>
-          <Select
-            value={selectedDeployment}
-            onChange={handleDeploymentChange}
-            label={t('Select Deployment')}
-            disabled={deployments.length === 0}
-            displayEmpty
-            notched
-          >
-            <MenuItem value="" disabled>
-              {deployments.length === 0 ? t('No deployments available') : t('Select a deployment')}
-            </MenuItem>
-            {deployments.map(dep => (
-              <MenuItem key={dep.name} value={dep.name}>
-                {dep.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <DeploymentSelector
+          selectedDeployment={selectedDeployment}
+          deployments={deployments}
+          onDeploymentChange={setSelectedDeployment}
+          sx={{ minWidth: 300 }}
+        />
       </Box>
 
       {deployments.length === 0 ? (

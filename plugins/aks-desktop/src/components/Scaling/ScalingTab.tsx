@@ -5,7 +5,7 @@ import { Icon } from '@iconify/react';
 import { K8s, useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { Alert, Box, Button, Card, CircularProgress, Typography } from '@mui/material';
 import React from 'react';
-import { DeploymentSelector } from './components/DeploymentSelector';
+import { DeploymentSelector } from '../shared/DeploymentSelector';
 import { ScalingChart } from './components/ScalingChart';
 import { ScalingEditDialog } from './components/ScalingEditDialog';
 import { ScalingMetrics } from './components/ScalingMetrics';

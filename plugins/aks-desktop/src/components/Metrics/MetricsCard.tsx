@@ -4,21 +4,13 @@
 import { Icon } from '@iconify/react';
 import { K8s, useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import Deployment from '@kinvolk/headlamp-plugin/lib/lib/k8s/deployment';
-import {
-  Box,
-  CircularProgress,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  Typography,
-  useTheme,
-} from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 import React, { useCallback, useEffect, useState } from 'react';
 import { getClusterResourceIdAndGroup } from '../../utils/azure/az-cli';
 import { RESOURCE_GROUP_LABEL, SUBSCRIPTION_LABEL } from '../../utils/constants/projectLabels';
 import { getPrometheusEndpoint } from '../MetricsTab/getPrometheusEndpoint';
 import { queryPrometheus } from '../MetricsTab/queryPrometheus';
+import { DeploymentSelector } from '../shared/DeploymentSelector';
 
 export interface ProjectDefinition {
   id: string;
@@ -278,10 +270,6 @@ function MetricsCard({ project }: MetricsCardProps) {
     return () => clearInterval(interval);
   }, [selectedDeployment, subscription, fetchMetrics]);
 
-  const handleDeploymentChange = (event: any) => {
-    setSelectedDeployment(event.target.value as string);
-  };
-
   return (
     <Box
       sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 0, '&:last-child': { pb: 0 } }}
@@ -296,30 +284,12 @@ function MetricsCard({ project }: MetricsCardProps) {
         }}
       >
         <Typography variant="h6">{t('Metrics')}</Typography>
-        <FormControl sx={{ minWidth: 200 }} size="small" variant="outlined">
-          <InputLabel>{t('Select Deployment')}</InputLabel>
-          <Select
-            value={selectedDeployment || ''}
-            onChange={handleDeploymentChange}
-            label={t('Select Deployment')}
-            disabled={loading || deployments.length === 0}
-          >
-            {loading ? (
-              <MenuItem disabled>
-                <CircularProgress size={16} style={{ marginRight: 8 }} />
-                {t('Loading deployments')}...
-              </MenuItem>
-            ) : deployments.length === 0 ? (
-              <MenuItem disabled>{t('No deployments found')}</MenuItem>
-            ) : (
-              deployments.map(deployment => (
-                <MenuItem key={deployment.name} value={deployment.name}>
-                  {deployment.name}
-                </MenuItem>
-              ))
-            )}
-          </Select>
-        </FormControl>
+        <DeploymentSelector
+          selectedDeployment={selectedDeployment}
+          deployments={deployments}
+          loading={loading}
+          onDeploymentChange={setSelectedDeployment}
+        />
       </Box>
 
       {error && (

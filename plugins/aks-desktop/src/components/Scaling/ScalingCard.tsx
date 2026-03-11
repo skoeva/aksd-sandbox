@@ -6,7 +6,7 @@ import { K8s, useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { Alert, Box, Typography } from '@mui/material';
 import React from 'react';
 import { RESOURCE_GROUP_LABEL, SUBSCRIPTION_LABEL } from '../../utils/constants/projectLabels';
-import { DeploymentSelector } from './components/DeploymentSelector';
+import { DeploymentSelector } from '../shared/DeploymentSelector';
 import { ScalingChart } from './components/ScalingChart';
 import { ScalingMetrics } from './components/ScalingMetrics';
 import { useChartData } from './hooks/useChartData';
