@@ -32,11 +32,17 @@ vi.mock('../utils/yamlGenerator', () => ({
   generateYamlForContainer: vi.fn(() => 'generated-yaml'),
 }));
 
+vi.mock('../utils/dryRunApply', () => ({
+  dryRunApply: vi.fn(),
+}));
+
 import { apply } from '@kinvolk/headlamp-plugin/lib/ApiProxy';
+import { dryRunApply } from '../utils/dryRunApply';
 import { generateYamlForContainer } from '../utils/yamlGenerator';
 import { useDeployWizard, WizardStep } from './useDeployWizard';
 
 const mockApply = vi.mocked(apply);
+const mockDryRunApply = vi.mocked(dryRunApply);
 const mockGenerateYaml = vi.mocked(generateYamlForContainer);
 
 describe('useDeployWizard', () => {
@@ -105,6 +111,7 @@ describe('useDeployWizard', () => {
   });
 
   it('handleDeploy success path sets deployResult to success', async () => {
+    mockDryRunApply.mockResolvedValueOnce(undefined);
     mockApply.mockResolvedValueOnce(undefined as any);
     const { result } = renderHook(() => useDeployWizard({}));
     act(() => {
@@ -121,6 +128,7 @@ describe('useDeployWizard', () => {
   });
 
   it('handleDeploy error path sets deployResult to error', async () => {
+    mockDryRunApply.mockResolvedValueOnce(undefined);
     mockApply.mockRejectedValueOnce(new Error('apply failed'));
     const { result } = renderHook(() => useDeployWizard({}));
     act(() => {
@@ -133,11 +141,12 @@ describe('useDeployWizard', () => {
       await result.current.handleDeploy();
     });
     expect(result.current.deployResult).toBe('error');
-    expect(result.current.deployMessage).toBe('apply failed');
+    expect(result.current.deployMessage).toBe('ConfigMap/my-cm: apply failed');
     expect(result.current.deploying).toBe(false);
   });
 
   it('handleDeploy sets deploying false after completion', async () => {
+    mockDryRunApply.mockResolvedValueOnce(undefined);
     mockApply.mockResolvedValueOnce(undefined as any);
     const { result } = renderHook(() => useDeployWizard({}));
     act(() => {
@@ -171,6 +180,7 @@ describe('useDeployWizard', () => {
 
   it('handleStepClick does not navigate while deploying is true', async () => {
     // Start a deploy that never resolves so we can inspect state mid-flight.
+    mockDryRunApply.mockImplementation(() => new Promise(() => {}));
     mockApply.mockImplementation(() => new Promise(() => {}));
     const { result } = renderHook(() => useDeployWizard({}));
     act(() => {
@@ -215,6 +225,7 @@ describe('useDeployWizard', () => {
     // can verify handleDeploy calls generateYamlForContainer directly.
     mockGenerateYaml.mockClear();
     mockGenerateYaml.mockReturnValue(validYaml);
+    mockDryRunApply.mockResolvedValueOnce(undefined);
 
     await act(async () => {
       await result.current.handleDeploy();

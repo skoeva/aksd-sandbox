@@ -5,6 +5,7 @@ import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { apply } from '@kinvolk/headlamp-plugin/lib/ApiProxy';
 import React, { useEffect, useState } from 'react';
 import YAML from 'yaml';
+import { dryRunApply } from '../utils/dryRunApply';
 import { applyNamespaceOverride } from '../utils/namespaceOverride';
 import { type ContainerConfigForYaml, generateYamlForContainer } from '../utils/yamlGenerator';
 import type { ContainerConfig } from './useContainerConfiguration';
@@ -225,8 +226,25 @@ export function useDeployWizard({
         // Container YAML already has namespace set by generateYamlForContainer.
         docs = sourceType === 'yaml' ? parseAndOverride(text, namespace) : parseAndOverride(text);
         for (const doc of docs) {
-          if (!doc || !doc.kind || !doc.metadata?.name) {
-            throw new Error(t('Invalid YAML: missing required fields (kind or metadata.name)'));
+          if (!doc || !doc.kind) {
+            throw new Error(t('Invalid YAML: missing required field (kind)'));
+          }
+          if (doc.kind === 'List' || (doc.kind.endsWith('List') && Array.isArray(doc.items))) {
+            if (!Array.isArray(doc.items)) {
+              throw new Error(t('Invalid YAML: List resource must have an array "items" field'));
+            }
+            for (const item of doc.items) {
+              if (!item?.kind) {
+                throw new Error(t('Invalid YAML: List item missing required field (kind)'));
+              }
+              if (!item?.metadata?.name) {
+                throw new Error(
+                  t('Invalid YAML: List item missing required field (metadata.name)')
+                );
+              }
+            }
+          } else if (!doc.metadata?.name) {
+            throw new Error(t('Invalid YAML: missing required field (metadata.name)'));
           }
         }
       } catch (e: unknown) {
@@ -237,14 +255,80 @@ export function useDeployWizard({
         return;
       }
 
-      let applied = 0;
-      for (const resource of docs) {
-        if (!resource || typeof resource !== 'object') continue;
-        await apply(resource as any, cluster);
-        applied++;
+      // Expand List resources (e.g., DeploymentList) into individual items
+      // so both dry-run and apply operate on each resource independently.
+      const flatDocs = docs.flatMap(resource => {
+        if (
+          resource.kind === 'List' ||
+          (resource.kind.endsWith('List') && Array.isArray(resource.items))
+        ) {
+          return resource.items.map((item: any) => ({
+            ...item,
+            apiVersion: item.apiVersion || resource.apiVersion,
+            metadata: {
+              ...item.metadata,
+              namespace: item.metadata?.namespace || resource.metadata?.namespace,
+            },
+          }));
+        }
+        return resource;
+      });
+
+      // Phase 1: Server-side dry-run validation (catches admission webhook errors).
+      // Runs in parallel — unlike the sequential Phase 2 apply — because dry-runs
+      // are read-only and safe to execute concurrently.
+      const dryRunResults = await Promise.allSettled(
+        flatDocs.map(resource => dryRunApply(resource, cluster))
+      );
+      const dryRunErrors = dryRunResults
+        .map((result, i) =>
+          result.status === 'rejected'
+            ? `${flatDocs[i].kind}/${flatDocs[i].metadata?.name ?? 'unknown'}: ${
+                result.reason?.message || t('Validation failed')
+              }`
+            : null
+        )
+        .filter((msg): msg is string => msg !== null);
+
+      if (dryRunErrors.length > 0) {
+        setDeployResult('error');
+        setDeployMessage(dryRunErrors.join('\n'));
+        return;
       }
-      setDeployResult('success');
-      setDeployMessage(t('Applied {{count}} resource successfully.', { count: applied }));
+
+      // Phase 2: Actual apply with per-resource error tracking
+      const errors: string[] = [];
+      let applied = 0;
+      for (const resource of flatDocs) {
+        if (!resource || typeof resource !== 'object') continue;
+        try {
+          await apply(resource as any, cluster);
+          applied++;
+        } catch (e: unknown) {
+          const errMsg = e instanceof Error ? e.message : String(e);
+          errors.push(
+            `${resource.kind}/${resource.metadata?.name ?? 'unknown'}: ${
+              errMsg || t('Failed to apply')
+            }`
+          );
+        }
+      }
+
+      if (errors.length > 0) {
+        setDeployResult('error');
+        setDeployMessage(
+          applied > 0
+            ? t('Applied {{applied}} resource(s), but {{failed}} failed:\n{{errors}}', {
+                applied,
+                failed: errors.length,
+                errors: errors.join('\n'),
+              })
+            : errors.join('\n')
+        );
+      } else {
+        setDeployResult('success');
+        setDeployMessage(t('Applied {{count}} resource(s) successfully.', { count: applied }));
+      }
     } catch (e: unknown) {
       setDeployResult('error');
       const deployErrMsg = e instanceof Error ? e.message : String(e);
