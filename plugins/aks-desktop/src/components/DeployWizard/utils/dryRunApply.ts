@@ -23,10 +23,12 @@ interface DiscoveryCacheEntry extends ResourceInfo {
   kind: string;
 }
 
-// Module-level cache: keyed by cluster + discovery URL, stores resource info for each API group.
-// Each API group per cluster is fetched at most once per page load. The cache has no TTL — if a CRD
-// is installed while the app is open, a page reload is needed to pick it up.
-const discoveryCache = new Map<string, DiscoveryCacheEntry[]>();
+// Module-level cache: keyed by cluster + discovery URL, stores a Promise of resource info for each
+// API group. Caching the Promise (not the resolved value) ensures that concurrent callers for the
+// same API group await the same in-flight request instead of issuing duplicate GETs. Each API group
+// per cluster is fetched at most once per page load. The cache has no TTL — if a CRD is installed
+// while the app is open, a page reload is needed to pick it up.
+const discoveryCache = new Map<string, Promise<DiscoveryCacheEntry[]>>();
 
 export function clearDiscoveryCache(): void {
   discoveryCache.clear();
@@ -44,19 +46,28 @@ export async function discoverResource(
   const discoveryUrl = apiVersion === 'v1' ? '/api/v1' : `/apis/${apiVersion}`;
   const cacheKey = `${cluster ?? ''}\0${discoveryUrl}`;
 
-  let resources = discoveryCache.get(cacheKey);
-  if (!resources) {
-    const response: any = await clusterRequest(discoveryUrl, {
+  let resourcesPromise = discoveryCache.get(cacheKey);
+  if (!resourcesPromise) {
+    resourcesPromise = clusterRequest(discoveryUrl, {
       method: 'GET',
       cluster,
-    });
-    resources = (response.resources || []).map((r: any) => ({
-      plural: r.name,
-      namespaced: r.namespaced,
-      kind: r.kind,
-    }));
-    discoveryCache.set(cacheKey, resources);
+    })
+      .then((response: any) =>
+        (response.resources || []).map((r: any) => ({
+          plural: r.name,
+          namespaced: r.namespaced,
+          kind: r.kind,
+        }))
+      )
+      .catch(err => {
+        // Remove failed entry so subsequent calls can retry
+        discoveryCache.delete(cacheKey);
+        throw err;
+      });
+    discoveryCache.set(cacheKey, resourcesPromise);
   }
+
+  const resources = await resourcesPromise;
 
   const candidates = resources.filter(r => r.kind === kind);
   // Prefer the primary resource (e.g. "pods") over subresources (e.g. "pods/status")

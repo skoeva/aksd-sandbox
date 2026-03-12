@@ -229,7 +229,7 @@ export function useDeployWizard({
           if (!doc || !doc.kind) {
             throw new Error(t('Invalid YAML: missing required field (kind)'));
           }
-          if (doc.kind === 'List' || (doc.kind.endsWith('List') && Array.isArray(doc.items))) {
+          if (doc.kind === 'List' || (doc.kind.endsWith('List') && doc.items !== undefined)) {
             if (!Array.isArray(doc.items)) {
               throw new Error(t('Invalid YAML: List resource must have an array "items" field'));
             }
@@ -260,7 +260,7 @@ export function useDeployWizard({
       const flatDocs = docs.flatMap(resource => {
         if (
           resource.kind === 'List' ||
-          (resource.kind.endsWith('List') && Array.isArray(resource.items))
+          (resource.kind.endsWith('List') && resource.items !== undefined)
         ) {
           return resource.items.map((item: any) => ({
             ...item,
@@ -281,13 +281,16 @@ export function useDeployWizard({
         flatDocs.map(resource => dryRunApply(resource, cluster))
       );
       const dryRunErrors = dryRunResults
-        .map((result, i) =>
-          result.status === 'rejected'
-            ? `${flatDocs[i].kind}/${flatDocs[i].metadata?.name ?? 'unknown'}: ${
-                result.reason?.message || t('Validation failed')
-              }`
-            : null
-        )
+        .map((result, i) => {
+          if (result.status !== 'rejected') {
+            return null;
+          }
+          const reason = result.reason as unknown;
+          const errMsg = reason instanceof Error ? reason.message : String(reason ?? '');
+          return `${flatDocs[i].kind}/${flatDocs[i].metadata?.name ?? 'unknown'}: ${
+            errMsg || t('Validation failed')
+          }`;
+        })
         .filter((msg): msg is string => msg !== null);
 
       if (dryRunErrors.length > 0) {
