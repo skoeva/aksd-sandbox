@@ -66,13 +66,17 @@ contextBridge.exposeInMainWorld('desktopApi', {
     ];
     if (validChannels.includes(channel)) {
       // Deliberately strip event as it includes `sender`
-      ipcRenderer.on(channel, (event, ...args) => func(...args));
+      const wrapper = (_event: Electron.IpcRendererEvent, ...args: unknown[]) => func(...args);
+      ipcRenderer.on(channel, wrapper);
+      return () => {
+        ipcRenderer.removeListener(channel, wrapper);
+      };
     }
+    return () => {};
   },
 
-  removeListener: (channel: string, func: (...args: unknown[]) => void) => {
-    ipcRenderer.removeListener(channel, func);
-  },
+  // No-op removeListener for backwards compatibility
+  removeListener: () => {},
 
   // Register AKS cluster
   registerAKSCluster: (
