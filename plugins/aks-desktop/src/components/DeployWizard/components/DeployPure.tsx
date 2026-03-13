@@ -92,7 +92,18 @@ export default function DeployPure({
                 : 'rgba(211, 47, 47, 0.08)',
           }}
         >
-          {deployMessage}
+          <Typography
+            variant="body2"
+            component="div"
+            sx={{
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              m: 0,
+              color: 'inherit',
+            }}
+          >
+            {deployMessage}
+          </Typography>
         </Box>
       )}
       {sourceType === 'container' ? (
