@@ -630,7 +630,7 @@
   "Clusters": "Fürtök",
   "Select one or more clusters": "Select one or more clusters",
   "No available clusters": "Nincsenek elérhető fürtök",
-  "Select an existing namespace": "Select an existing namespace",
+  "Select an existing namespace": "Meglévő névtér kiválasztása",
   "Choose a namespace from the selected clusters": "Choose a namespace from the selected clusters",
   "Select a cluster first": "Select a cluster first",
   "No namespaces found on selected clusters": "No namespaces found on selected clusters",

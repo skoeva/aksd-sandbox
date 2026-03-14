@@ -630,7 +630,7 @@
   "Clusters": "Cluster",
   "Select one or more clusters": "Select one or more clusters",
   "No available clusters": "Keine verfügbaren Cluster",
-  "Select an existing namespace": "Select an existing namespace",
+  "Select an existing namespace": "Vorhandenen Namespace auswählen",
   "Choose a namespace from the selected clusters": "Choose a namespace from the selected clusters",
   "Select a cluster first": "Select a cluster first",
   "No namespaces found on selected clusters": "No namespaces found on selected clusters",

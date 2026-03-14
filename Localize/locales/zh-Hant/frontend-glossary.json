@@ -1,9 +1,9 @@
 {
-  "Kubernetes Version": "Kubernetes Version",
+  "Kubernetes Version": "Kubernetes 版本",
   "Cluster": "叢集",
   "Cluster selector": "叢集選取器",
   "AKS desktop Version": "AKS 桌面版本",
-  "Headlamp Version": "Headlamp Version",
+  "Headlamp Version": "Headlamp 版本",
   "Git Commit": "Git 認可",
   "About": "關於",
   "Legal": "合法",
