@@ -14,6 +14,7 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
+  useTheme,
 } from '@mui/material';
 import { useState } from 'react';
 
@@ -26,12 +27,18 @@ interface TermsDialogProps {
 export default function TermsDialog({ open, onClose, onAccept }: TermsDialogProps) {
   const [accepted, setAccepted] = useState(false);
   const { t } = useTranslation();
+  const theme = useTheme();
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
         <Box display="flex" alignItems="center" gap={1}>
-          <Icon icon="mdi:alert-circle" width="24px" height="24px" style={{ color: 'orange' }} />
+          <Icon
+            icon="mdi:alert-circle"
+            width="24px"
+            height="24px"
+            style={{ color: theme.palette.primary.main }}
+          />
           <Typography variant="h6">{t('AI Assistant Terms & Important Information')}</Typography>
         </Box>
       </DialogTitle>
@@ -47,7 +54,7 @@ export default function TermsDialog({ open, onClose, onAccept }: TermsDialogProp
                 icon="mdi:currency-usd"
                 width="20px"
                 height="20px"
-                style={{ color: 'orange' }}
+                style={{ color: theme.palette.primary.main }}
               />
             </ListItemIcon>
             <ListItemText
@@ -60,7 +67,12 @@ export default function TermsDialog({ open, onClose, onAccept }: TermsDialogProp
 
           <ListItem>
             <ListItemIcon>
-              <Icon icon="mdi:key" width="20px" height="20px" style={{ color: 'orange' }} />
+              <Icon
+                icon="mdi:key"
+                width="20px"
+                height="20px"
+                style={{ color: theme.palette.primary.main }}
+              />
             </ListItemIcon>
             <ListItemText
               primary={t('API Keys')}
@@ -76,7 +88,7 @@ export default function TermsDialog({ open, onClose, onAccept }: TermsDialogProp
                 icon="mdi:shield-alert"
                 width="20px"
                 height="20px"
-                style={{ color: 'orange' }}
+                style={{ color: theme.palette.primary.main }}
               />
             </ListItemIcon>
             <ListItemText
@@ -93,7 +105,7 @@ export default function TermsDialog({ open, onClose, onAccept }: TermsDialogProp
                 icon="mdi:account-supervisor"
                 width="20px"
                 height="20px"
-                style={{ color: 'orange' }}
+                style={{ color: theme.palette.primary.main }}
               />
             </ListItemIcon>
             <ListItemText
@@ -105,7 +117,7 @@ export default function TermsDialog({ open, onClose, onAccept }: TermsDialogProp
           </ListItem>
         </List>
 
-        <Box sx={{ mt: 3, p: 2, bgcolor: 'warning.light', borderRadius: 1 }}>
+        <Box sx={{ mt: 3, p: 2, bgcolor: theme.palette.secondary.light, borderRadius: 1 }}>
           <Typography variant="body2" sx={{ fontWeight: 'medium', mb: 1 }}>
             ⚠️ {t('Important Reminder')}
           </Typography>
