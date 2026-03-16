@@ -38,6 +38,7 @@ import LogsTab from './components/LogsTab/LogsTab';
 import MetricsCard from './components/Metrics/MetricsCard';
 import MetricsTab from './components/MetricsTab/MetricsTab';
 import PreviewFeaturesSettings from './components/PluginSettings/PreviewFeaturesSettings';
+import { previewFeaturesStore } from './components/PluginSettings/previewFeaturesStore';
 import ScalingCard from './components/Scaling/ScalingCard';
 import ScalingTab from './components/Scaling/ScalingTab';
 import { getLoginStatus } from './utils/azure/az-cli';
@@ -320,7 +321,8 @@ registerProjectOverviewSection({
 registerProjectOverviewSection({
   id: 'pipeline-overview',
   // @ts-expect-error isEnabled exists at runtime but is missing from ProjectOverviewSection types
-  isEnabled: isAksProject,
+  isEnabled: props =>
+    previewFeaturesStore.get().githubPipelines ? isAksProject(props) : Promise.resolve(false),
   // GitHubAuthProvider is duplicated across three registrations (here, DeployTab, and
   // ConfigurePipelineButton) because Headlamp renders each registered component in an
   // independent React tree — there is no shared ancestor to hoist the provider into.
