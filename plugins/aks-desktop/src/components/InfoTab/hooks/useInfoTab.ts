@@ -3,11 +3,7 @@
 
 import { K8s, useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  getManagedNamespaceDetails,
-  getManagedNamespaces,
-  updateManagedNamespace,
-} from '../../../utils/azure/az-cli';
+import { getManagedNamespaceDetails, updateManagedNamespace } from '../../../utils/azure/az-cli';
 import { RESOURCE_GROUP_LABEL, SUBSCRIPTION_LABEL } from '../../../utils/constants/projectLabels';
 import {
   DEFAULT_FORM_DATA,
@@ -42,6 +38,11 @@ function parseMiB(val: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+// Module-level cache keyed by "<clusterName>/<projectId>".
+// Persists across tab switches for the lifetime of the app session.
+// Exported for testing purposes only.
+export const detailsCache = new Map<string, NamespaceDetails>();
+
 /**
  * The shape of namespace details returned from the Azure CLI.
  */
@@ -64,8 +65,10 @@ export interface NamespaceDetails {
  * Return type for the {@link useInfoTab} hook.
  */
 export interface UseInfoTabResult {
-  /** Whether the initial namespace details fetch is in progress. */
+  /** Whether the initial namespace details fetch is in progress (no cached data available). */
   loading: boolean;
+  /** Whether a background revalidation fetch is in progress. */
+  revalidating: boolean;
   /** Whether an update operation is in progress. */
   updating: boolean;
   /** Error message if fetch or update failed, otherwise null. */
@@ -82,13 +85,16 @@ export interface UseInfoTabResult {
   handleFormDataChange: (updates: Partial<FormData>) => void;
   /** Persists the current form data to the managed namespace. */
   handleSave: () => Promise<void>;
+  /** Manually triggers a fresh fetch from Azure CLI. */
+  handleRefresh: () => void;
 }
 
 /**
  * Manages data fetching, form state, validation, and save logic for the InfoTab component.
  *
- * Fetches managed namespace details from the Azure CLI and pre-populates the networking
- * and compute quota form fields. Provides handlers for form changes and persisting updates.
+ * Uses a stale-while-revalidate strategy: cached data is shown immediately on subsequent
+ * opens, while a background fetch keeps it fresh. The cache is invalidated automatically
+ * after a successful save.
  *
  * @param project - The project whose first cluster and namespace are used for Azure CLI calls.
  * @returns State and handlers for the InfoTab component to render.
@@ -113,12 +119,17 @@ export const useInfoTab = (project: {
   const subscription = namespaceInstance?.jsonData?.metadata?.labels?.[SUBSCRIPTION_LABEL];
   const resourceGroup = namespaceInstance?.jsonData?.metadata?.labels?.[RESOURCE_GROUP_LABEL];
 
-  const [loading, setLoading] = useState(false);
+  const cacheKey = clusterName && projectId ? `${clusterName}/${projectId}` : null;
+  const cached = cacheKey ? detailsCache.get(cacheKey) ?? null : null;
+
+  const [loading, setLoading] = useState(cached === null);
+  const [revalidating, setRevalidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [namespaceDetails, setNamespaceDetails] = useState<NamespaceDetails | null>(null);
+  const [namespaceDetails, setNamespaceDetails] = useState<NamespaceDetails | null>(cached);
   const [formData, setFormData] = useState<FormData>(DEFAULT_FORM_DATA);
   const [baselineFormData, setBaselineFormData] = useState<FormData | null>(null);
   const [updating, setUpdating] = useState(false);
+  const [refreshTick, setRefreshTick] = useState(0);
   const [validation, setValidation] = useState<ValidationState>({
     isValid: true,
     errors: [],
@@ -126,10 +137,12 @@ export const useInfoTab = (project: {
     fieldErrors: {},
   });
 
-  // Fetch managed namespace details from Azure CLI
+  // Fetch (or revalidate) managed namespace details from Azure CLI.
+  // If cached data exists, runs silently in the background (revalidating).
+  // If no cached data, shows a blocking spinner (loading).
   useEffect(() => {
     let isMounted = true;
-    if (!clusterName || !resourceGroup) {
+    if (!clusterName || !resourceGroup || !cacheKey) {
       setLoading(false);
       setError(null);
       setNamespaceDetails(null);
@@ -138,56 +151,47 @@ export const useInfoTab = (project: {
       };
     }
 
+    const hasCached = detailsCache.has(cacheKey);
+    if (hasCached) {
+      setRevalidating(true);
+    } else {
+      setLoading(true);
+    }
+    setError(null);
+
     (async () => {
       try {
-        setLoading(true);
-        setError(null);
-
-        let nsList: string[];
-        try {
-          nsList = await getManagedNamespaces({
-            clusterName,
-            resourceGroup,
-            subscriptionId: subscription,
-          });
-        } catch (e) {
-          console.error(e);
-          if (isMounted) {
-            setError(t('Failed to fetch managed namespaces'));
-            setNamespaceDetails(null);
-          }
-          return;
+        const details = await getManagedNamespaceDetails({
+          clusterName,
+          resourceGroup,
+          namespaceName: projectId,
+          subscriptionId: subscription,
+        });
+        if (isMounted) {
+          detailsCache.set(cacheKey, details);
+          setNamespaceDetails(details);
         }
-
-        if (nsList.length === 0) {
-          if (isMounted) setNamespaceDetails(null);
-          return;
-        }
-
-        try {
-          const details = await getManagedNamespaceDetails({
-            clusterName,
-            resourceGroup,
-            namespaceName: projectId,
-            subscriptionId: subscription,
-          });
-          if (isMounted) setNamespaceDetails(details);
-        } catch (e) {
-          console.error(e);
-          if (isMounted) {
+      } catch (e) {
+        console.error(e);
+        if (isMounted) {
+          // Only surface the error if we have no cached data to show.
+          if (!hasCached) {
             setError(t('Failed to fetch managed namespace details'));
             setNamespaceDetails(null);
           }
         }
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+          setRevalidating(false);
+        }
       }
     })();
 
     return () => {
       isMounted = false;
     };
-  }, [clusterName, projectId, subscription, resourceGroup]);
+  }, [clusterName, projectId, subscription, resourceGroup, refreshTick]);
 
   // Pre-populate form when namespace details are fetched
   useEffect(() => {
@@ -272,16 +276,24 @@ export const useInfoTab = (project: {
       });
       setBaselineFormData(formData);
       setError(null);
+      // Invalidate cache so the next background fetch reflects the saved state.
+      if (cacheKey) detailsCache.delete(cacheKey);
     } catch (e) {
       console.error('Failed to update managed namespace', e);
       setError(t('Failed to update managed namespace'));
     } finally {
       setUpdating(false);
     }
-  }, [resourceGroup, clusterName, projectId, formData]);
+  }, [resourceGroup, clusterName, projectId, formData, cacheKey]);
+
+  const handleRefresh = useCallback(() => {
+    if (cacheKey) detailsCache.delete(cacheKey);
+    setRefreshTick(n => n + 1);
+  }, [cacheKey]);
 
   return {
     loading,
+    revalidating,
     updating,
     error,
     namespaceDetails,
@@ -290,5 +302,6 @@ export const useInfoTab = (project: {
     hasChanges,
     handleFormDataChange,
     handleSave,
+    handleRefresh,
   };
 };
