@@ -57,6 +57,26 @@ import { addRunCmdConsent, removeRunCmdConsent, runScript, setupRunCmdHandlers }
 import { setupSecureStorageHandlers } from './secure-storage';
 import windowSize from './windowSize';
 
+/**
+ * Reads the custom URL protocol scheme from package.json's build.protocols.schemes.
+ * Falls back to the app name (lowercased, spaces replaced with hyphens), then 'headlamp'.
+ */
+function getProtocolScheme(): string {
+  try {
+    const pkgPath = path.join(__dirname, '..', 'package.json');
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+    const schemes: string[] | undefined = pkg?.build?.protocols?.schemes;
+    if (schemes && schemes.length > 0) {
+      return schemes[0];
+    }
+  } catch {
+    // Fall through to fallback
+  }
+  return app.name?.toLowerCase().replace(/\s+/g, '-') || 'headlamp';
+}
+
+const protocolScheme = getProtocolScheme();
+
 let isRunningScript = false;
 if (process.env.HEADLAMP_RUN_SCRIPT) {
   isRunningScript = true;
@@ -1675,7 +1695,7 @@ async function startElectron() {
       // aksd: On Windows/Linux cold start, deep link URLs arrive via process.argv
       // (not via second-instance). Check initial argv after the window is ready.
       if (process.platform !== 'darwin') {
-        const deepLink = process.argv.find(arg => arg.startsWith('headlamp://'));
+        const deepLink = process.argv.find(arg => arg.startsWith(`${protocolScheme}://`));
         if (deepLink) {
           handleDeepLink(deepLink, mainWindow);
         }
@@ -1710,16 +1730,16 @@ async function startElectron() {
       }
     });
 
-    /** Routes headlamp:// deep links to the appropriate handler. Returns true if handled. */
+    /** Routes deep links matching the app's registered protocol scheme to the appropriate handler. */
     function handleDeepLink(urlString: string, targetWindow: BrowserWindow | null): boolean {
       if (!targetWindow) return false;
       try {
         const urlObj = new URL(urlString);
-        if (urlObj.protocol !== 'headlamp:') {
+        if (urlObj.protocol !== `${protocolScheme}:`) {
           return false;
         }
         if (urlObj.hostname === 'oauth' && urlObj.pathname === '/callback') {
-          handleOAuthCallback(urlObj, targetWindow);
+          handleOAuthCallback(urlObj, targetWindow, `${protocolScheme}://oauth/callback`);
           return true;
         }
       } catch {
@@ -1739,7 +1759,7 @@ async function startElectron() {
         }
 
         // aksd: On Windows/Linux, deep link URLs arrive as the last argv element
-        const deepLink = argv.find(arg => arg.startsWith('headlamp://'));
+        const deepLink = argv.find(arg => arg.startsWith(`${protocolScheme}://`));
         if (deepLink) {
           handleDeepLink(deepLink, mainWindow);
         }
@@ -1877,7 +1897,7 @@ async function startElectron() {
 
     // aksd: GitHub OAuth web flow (start, callback, refresh) via main process
     // In dev mode, uses a localhost HTTP callback server instead of the custom URL scheme.
-    setupGitHubOAuthHandlers({ isDev, getMainWindow: () => mainWindow });
+    setupGitHubOAuthHandlers({ isDev, getMainWindow: () => mainWindow, protocolScheme });
 
     // Handle AKS cluster registration
     ipcMain.handle(
