@@ -456,4 +456,43 @@ describe('ImportAKSProjects', () => {
 
     expect(screen.getByText(/Failed to convert namespace/)).toBeInTheDocument();
   });
+
+  test('Go To Projects button navigates via history.replace and reloads', async () => {
+    const reloadMock = vi.fn();
+    vi.stubGlobal('location', { ...window.location, reload: reloadMock });
+
+    try {
+      const ns = makeDiscoveredNamespace({
+        name: 'ns-ok',
+        clusterName: 'cluster-a',
+        resourceGroup: 'rg-a',
+        subscriptionId: 'sub-a',
+        isAksProject: true,
+        category: 'needs-import',
+      });
+      mockUseNamespaceDiscovery.mockReturnValue(defaultDiscoveryReturn([ns]));
+      mockRegisterAKSCluster.mockResolvedValue({ success: true });
+
+      render(<ImportAKSProjects />);
+
+      // Select the namespace
+      const row = screen.getByTestId('row-ns-ok');
+      const checkbox = row.querySelector('input[type="checkbox"]') as HTMLInputElement;
+      fireEvent.click(checkbox);
+
+      // Click Import Selected (already a project, no conversion dialog)
+      fireEvent.click(screen.getByText('Import Selected Projects'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Go To Projects')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('Go To Projects'));
+
+      expect(mockReplace).toHaveBeenCalledWith('/');
+      expect(reloadMock).toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });
