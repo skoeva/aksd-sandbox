@@ -56,6 +56,17 @@ const Container = styled('div')<{
   ':hover': {
     borderColor: isSelected ? undefined : alpha(theme.palette.action.active, 0.2),
     boxShadow: '4px 4px 6px rgba(0,0,0,0.06)',
+    zIndex: 10,
+    '& .label-container': {
+      overflow: 'visible',
+    },
+  },
+
+  ':focus-within': {
+    zIndex: 10,
+    '& .label-container': {
+      overflow: 'visible',
+    },
   },
 
   '::before':
@@ -117,7 +128,7 @@ const TextContainer = styled('div')({
   display: 'flex',
   alignItems: 'center',
   gap: '8px',
-  height: '48px',
+  minHeight: '48px',
 });
 
 const LabelContainer = styled('div')<{ isCollapsed?: boolean }>(({ isCollapsed }) => ({
@@ -134,9 +145,8 @@ const Subtitle = styled('div')({
 });
 
 const Title = styled('div')({
-  textOverflow: 'ellipsis',
-  overflow: 'hidden',
-  whiteSpace: 'nowrap',
+  whiteSpace: 'normal',
+  wordBreak: 'break-word',
 });
 
 const EXPAND_DELAY = 450;
@@ -186,8 +196,8 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
       return;
     }
 
-    const id = setTimeout(() => setIsExpanded(true), EXPAND_DELAY);
-    return () => clearInterval(id);
+    const expandTimeoutId = setTimeout(() => setIsExpanded(true), EXPAND_DELAY);
+    return () => clearTimeout(expandTimeoutId);
   }, [isHovered]);
 
   const icon = kubeObject ? (
@@ -271,17 +281,9 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
 
       <TextContainer>
         {icon}
-        <LabelContainer isCollapsed={isCollapsed}>
+        <LabelContainer className="label-container" isCollapsed={isCollapsed}>
           <Subtitle>{subtitle}</Subtitle>
-          <Title
-            sx={{
-              textOverflow: 'ellipsis',
-              overflow: 'hidden',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {label}
-          </Title>
+          <Title>{label}</Title>
         </LabelContainer>
       </TextContainer>
       {isExpanded && <NodeGlance node={node} />}
