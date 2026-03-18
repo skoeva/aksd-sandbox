@@ -243,14 +243,20 @@ export function useCreateAKSProjectWizard(): UseCreateAKSProjectWizardResult {
     setActiveStep(step);
   };
 
-  // Focus on the content when changing steps
+  // Focus on the content when changing steps.
+  // Prioritise form inputs over alert action buttons so that the first
+  // interactable field receives focus (e.g. "Project Name" on the Basics step).
   useEffect(() => {
     requestAnimationFrame(() => {
       const container = stepContentRef.current;
       if (!container) return;
-      const focusable = container.querySelector<HTMLElement>(
-        'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"]):not([disabled])'
-      );
+      const focusable =
+        container.querySelector<HTMLElement>(
+          'input:not([disabled]), select:not([disabled]), textarea:not([disabled])'
+        ) ??
+        container.querySelector<HTMLElement>(
+          'button:not([disabled]), [tabindex]:not([tabindex="-1"]):not([disabled])'
+        );
       focusable?.focus();
     });
   }, [activeStep]);

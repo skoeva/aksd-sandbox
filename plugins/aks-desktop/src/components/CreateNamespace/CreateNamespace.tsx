@@ -15,7 +15,7 @@ import {
   Theme,
   Typography,
 } from '@mui/material';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { createNamespaceAsProject } from '../../utils/kubernetes/namespaceUtils';
 import { getClusterSettings, setClusterSettings } from '../../utils/shared/clusterSettings';
@@ -58,6 +58,27 @@ function CreateNamespaceContent() {
   const [creationError, setCreationError] = useState<string | null>(null);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [applicationName, setApplicationName] = useState('');
+  const stepContentRef = useRef<HTMLDivElement>(null);
+
+  // Focus the first form input when the active step changes.
+  // Skip if the user already has focus inside the step content.
+  useEffect(() => {
+    const frameId = requestAnimationFrame(() => {
+      const container = stepContentRef.current;
+      if (!container) return;
+      const active = document.activeElement as HTMLElement | null;
+      if (active && container.contains(active)) return;
+      const focusable =
+        container.querySelector<HTMLElement>(
+          'input:not([disabled]), select:not([disabled]), textarea:not([disabled])'
+        ) ??
+        container.querySelector<HTMLElement>(
+          'button:not([disabled]), [tabindex]:not([tabindex="-1"]):not([disabled])'
+        );
+      focusable?.focus();
+    });
+    return () => cancelAnimationFrame(frameId);
+  }, [activeStep]);
 
   const clusterOptions: SearchableSelectOption[] = useMemo(() => {
     if (!clustersConf) return [];
@@ -428,7 +449,9 @@ function CreateNamespaceContent() {
             />
 
             {/* Step Content */}
-            <Box sx={{ p: 3 }}>{renderStepContent(activeStep)}</Box>
+            <Box ref={stepContentRef} sx={{ p: 3 }}>
+              {renderStepContent(activeStep)}
+            </Box>
 
             {/* Footer */}
             <Box sx={{ p: 3, display: 'flex', alignItems: 'center' }}>

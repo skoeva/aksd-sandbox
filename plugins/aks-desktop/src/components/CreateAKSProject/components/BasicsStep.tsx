@@ -83,6 +83,16 @@ export const BasicsStep: React.FC<BasicsStepProps> = ({
   const headlampClusters = K8s.useClustersConf();
   const authStatus = useAzureAuth();
 
+  // Focus the Project Name input on mount (the wizard-level focus effect
+  // misses the initial render because AzureAuthGuard delays mounting).
+  // Only steal focus when nothing else is focused (activeElement is <body>).
+  const projectNameRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (document.activeElement?.tagName === 'BODY') {
+      projectNameRef.current?.focus();
+    }
+  }, []);
+
   // Auto select default subscription
   const autoSelected = useRef(false);
   useEffect(() => {
@@ -292,6 +302,7 @@ export const BasicsStep: React.FC<BasicsStepProps> = ({
             label={t('Project Name')}
             value={formData.projectName}
             onChange={value => handleInputChange('projectName', value)}
+            inputRef={projectNameRef}
             error={
               namespaceStatus.exists === true ||
               (validation.fieldErrors?.projectName && validation.fieldErrors.projectName.length > 0)
