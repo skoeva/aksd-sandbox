@@ -8,15 +8,15 @@ import type { ClusterCapabilities } from '../../types/ClusterCapabilities';
 import { FormData, FormValidationResult, UserAssignment, ValidationResult } from './types';
 
 /**
- * Validates email format using a comprehensive regex
+ * Validates Azure AD object ID format (UUID/GUID)
  */
-export const isValidEmail = (email: string): boolean => {
-  if (!email || typeof email !== 'string') {
+export const isValidObjectId = (objectId: string): boolean => {
+  if (!objectId || typeof objectId !== 'string') {
     return false;
   }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email.trim());
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(objectId.trim());
 };
 
 /**
@@ -66,13 +66,15 @@ export const validateAssignments = (assignments: UserAssignment[]): ValidationRe
     return { isValid: true, errors: [], warnings: [] };
   }
 
-  // If there are assignments, ALL of them must have valid, non-empty email addresses
+  // If there are assignments, ALL of them must have valid, non-empty object IDs
   assignments.forEach((assignment, index) => {
-    const trimmedEmail = assignment.email.trim();
-    if (trimmedEmail === '') {
-      errors.push(`Assignee ${index + 1}: Please enter a valid email address or remove this entry`);
-    } else if (!isValidEmail(trimmedEmail)) {
-      errors.push(`Assignee ${index + 1}: Please enter a valid email address`);
+    const trimmedId = assignment.objectId.trim();
+    if (trimmedId === '') {
+      errors.push(
+        `Assignee ${index + 1}: Please enter a valid Azure AD object ID or remove this entry`
+      );
+    } else if (!isValidObjectId(trimmedId)) {
+      errors.push(`Assignee ${index + 1}: Please enter a valid Azure AD object ID (UUID format)`);
     }
   });
 

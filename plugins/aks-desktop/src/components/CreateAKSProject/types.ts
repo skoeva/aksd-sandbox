@@ -24,7 +24,7 @@ export interface AzureCluster {
 }
 
 export interface UserAssignment {
-  email: string;
+  objectId: string;
   role: string;
 }
 
@@ -204,7 +204,7 @@ export const DEFAULT_FORM_DATA: FormData = {
   memoryRequest: 4096,
   cpuLimit: 2000,
   memoryLimit: 4096,
-  userAssignments: [{ email: '', role: 'Writer' }],
+  userAssignments: [{ objectId: '', role: 'Writer' }],
 };
 
 // Available roles

@@ -2612,11 +2612,12 @@ export async function createNamespaceRoleAssignment(options: {
   clusterName: string;
   resourceGroup: string;
   namespaceName: string;
-  assignee: string;
+  assigneeObjectId: string;
   role: string;
   subscriptionId?: string;
 }): Promise<{ success: boolean; stdout: string; stderr: string; error?: string }> {
-  const { clusterName, resourceGroup, namespaceName, assignee, role, subscriptionId } = options;
+  const { clusterName, resourceGroup, namespaceName, assigneeObjectId, role, subscriptionId } =
+    options;
 
   // Strip quotes from role if present (they may have been added for Windows)
   // We'll handle platform-specific quoting below
@@ -2706,8 +2707,10 @@ export async function createNamespaceRoleAssignment(options: {
       'role',
       'assignment',
       'create',
-      '--assignee',
-      assignee,
+      '--assignee-object-id',
+      assigneeObjectId,
+      '--assignee-principal-type',
+      'User',
       '--role',
       finalRole,
       '--scope',
@@ -2763,7 +2766,7 @@ export async function verifyNamespaceAccess(options: {
   clusterName: string;
   resourceGroup: string;
   namespaceName: string;
-  assignee: string;
+  assigneeObjectId: string;
   subscriptionId?: string;
 }): Promise<{
   success: boolean;
@@ -2772,7 +2775,7 @@ export async function verifyNamespaceAccess(options: {
   stderr: string;
   error?: string;
 }> {
-  const { clusterName, resourceGroup, namespaceName, assignee, subscriptionId } = options;
+  const { clusterName, resourceGroup, namespaceName, assigneeObjectId, subscriptionId } = options;
 
   try {
     // First, get the resource ID of the managed namespace
@@ -2847,7 +2850,7 @@ export async function verifyNamespaceAccess(options: {
       'assignment',
       'list',
       '--assignee',
-      assignee,
+      assigneeObjectId,
       '--scope',
       namespaceResourceId,
       '--query',

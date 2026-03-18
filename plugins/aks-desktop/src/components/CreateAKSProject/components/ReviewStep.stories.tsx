@@ -36,8 +36,8 @@ const BASE_FORM_DATA = {
   cpuLimit: 4000,
   memoryLimit: 8192,
   userAssignments: [
-    { email: 'alice@example.com', role: 'Admin' },
-    { email: 'bob@example.com', role: 'Reader' },
+    { objectId: '00000000-1111-2222-3333-444444444444', role: 'Admin' },
+    { objectId: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', role: 'Reader' },
   ],
 };
 
@@ -103,7 +103,7 @@ SingleAssignee.args = {
   ...BASE_PROPS,
   formData: {
     ...BASE_FORM_DATA,
-    userAssignments: [{ email: 'charlie@example.com', role: 'Writer' }],
+    userAssignments: [{ objectId: '11111111-2222-3333-4444-555555555555', role: 'Writer' }],
   },
 };
 
@@ -119,14 +119,14 @@ ManyAssignees.args = {
   formData: {
     ...BASE_FORM_DATA,
     userAssignments: [
-      { email: 'alice@example.com', role: 'Admin' },
-      { email: 'bob@example.com', role: 'Reader' },
-      { email: 'charlie@example.com', role: 'Writer' },
-      { email: 'diana@example.com', role: 'Admin' },
-      { email: 'evan@example.com', role: 'Reader' },
-      { email: 'fiona@example.com', role: 'Writer' },
-      { email: 'george@example.com', role: 'Reader' },
-      { email: 'hannah@example.com', role: 'Admin' },
+      { objectId: '00000000-1111-2222-3333-444444444444', role: 'Admin' },
+      { objectId: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', role: 'Reader' },
+      { objectId: '11111111-2222-3333-4444-555555555555', role: 'Writer' },
+      { objectId: '22222222-3333-4444-5555-666666666666', role: 'Admin' },
+      { objectId: '33333333-4444-5555-6666-777777777777', role: 'Reader' },
+      { objectId: '44444444-5555-6666-7777-888888888888', role: 'Writer' },
+      { objectId: '55555555-6666-7777-8888-999999999999', role: 'Reader' },
+      { objectId: '66666666-7777-8888-9999-aaaaaaaaaaaa', role: 'Admin' },
     ],
   },
 };

@@ -531,7 +531,7 @@ export function useCreateAKSProjectWizard(): UseCreateAKSProjectWizardResult {
       }
 
       // Use the raw (un-redacted) message for the user-visible error dialog so
-      // actionable details (e.g., the assignee email that failed) are visible.
+      // actionable details (e.g., the assignee that failed) are visible.
       // Sanitization is only applied to console logging above.
       setCreationError(rawErrorMessage || t('Failed to create project'));
       setIsCreating(false);

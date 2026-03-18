@@ -8,7 +8,7 @@ import { Box, Button, FormControl, Grid, IconButton, MenuItem, Typography } from
 import React, { useEffect, useRef } from 'react';
 import type { AccessStepProps, RoleType, UserAssignment } from '../types';
 import { AVAILABLE_ROLES } from '../types';
-import { isValidEmail } from '../validators';
+import { isValidObjectId } from '../validators';
 import { FormField } from './FormField';
 
 function getRoleDescription(t: (key: string) => string, role: RoleType): string {
@@ -67,7 +67,7 @@ export const AccessStep: React.FC<AccessStepProps> = ({
 
   const handleAddAssignment = () => {
     const newAssignment: UserAssignment = {
-      email: '',
+      objectId: '',
       role: 'Writer',
     };
     onFormDataChange({
@@ -76,8 +76,8 @@ export const AccessStep: React.FC<AccessStepProps> = ({
   };
 
   const hasInvalidAssignments = formData.userAssignments.some(assignment => {
-    const trimmedEmail = assignment.email.trim();
-    return trimmedEmail === '' || !isValidEmail(trimmedEmail);
+    const trimmedId = assignment.objectId.trim();
+    return trimmedId === '' || !isValidObjectId(trimmedId);
   });
 
   return (
@@ -94,18 +94,21 @@ export const AccessStep: React.FC<AccessStepProps> = ({
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
                 <FormField
-                  label={`${t('Assignee')} ${idx + 1} (email)`}
-                  type="email"
-                  value={assignment.email}
-                  onChange={value => handleAssignmentChange(idx, 'email', value as string)}
-                  placeholder={t('user@example.com')}
+                  label={`${t('Assignee')} ${idx + 1} (${t('Azure AD object ID')})`}
+                  type="text"
+                  value={assignment.objectId}
+                  onChange={value => handleAssignmentChange(idx, 'objectId', value as string)}
+                  placeholder={t('00000000-0000-0000-0000-000000000000')}
                   disabled={loading}
-                  error={assignment.email.trim() === '' || !isValidEmail(assignment.email.trim())}
+                  error={
+                    assignment.objectId.trim() === '' ||
+                    !isValidObjectId(assignment.objectId.trim())
+                  }
                   helperText={
-                    assignment.email.trim() === ''
-                      ? t('Please enter a valid email address or remove this entry')
-                      : !isValidEmail(assignment.email.trim())
-                      ? t('Please enter a valid email address')
+                    assignment.objectId.trim() === ''
+                      ? t('Please enter a valid Azure AD object ID or remove this entry')
+                      : !isValidObjectId(assignment.objectId.trim())
+                      ? t('Please enter a valid Azure AD object ID (UUID format)')
                       : ''
                   }
                   inputRef={

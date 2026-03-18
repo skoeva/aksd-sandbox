@@ -43,6 +43,9 @@ const baseOptions = {
   t: mockT,
 };
 
+const testObjectId1 = '00000000-1111-2222-3333-444444444444';
+const testObjectId2 = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+
 describe('assignRolesToNamespace', () => {
   beforeEach(() => {
     mockCreateNamespaceRoleAssignment.mockReset();
@@ -52,7 +55,7 @@ describe('assignRolesToNamespace', () => {
   test('returns success with empty results when no valid assignments', async () => {
     const result = await assignRolesToNamespace({
       ...baseOptions,
-      assignments: [{ email: '', role: 'Writer' }],
+      assignments: [{ objectId: '', role: 'Writer' }],
     });
 
     expect(result.success).toBe(true);
@@ -67,7 +70,7 @@ describe('assignRolesToNamespace', () => {
 
     const result = await assignRolesToNamespace({
       ...baseOptions,
-      assignments: [{ email: 'user@example.com', role: 'Writer' }],
+      assignments: [{ objectId: testObjectId1, role: 'Writer' }],
     });
 
     expect(result.success).toBe(true);
@@ -77,16 +80,28 @@ describe('assignRolesToNamespace', () => {
     // 3 roles: mapped Writer role + Namespace User + Namespace Contributor
     expect(mockCreateNamespaceRoleAssignment).toHaveBeenCalledTimes(3);
     expect(mockCreateNamespaceRoleAssignment).toHaveBeenCalledWith(
-      expect.objectContaining({ role: 'Azure Kubernetes Service RBAC Writer' })
+      expect.objectContaining({
+        assigneeObjectId: testObjectId1,
+        role: 'Azure Kubernetes Service RBAC Writer',
+      })
     );
     expect(mockCreateNamespaceRoleAssignment).toHaveBeenCalledWith(
-      expect.objectContaining({ role: 'Azure Kubernetes Service Namespace User' })
+      expect.objectContaining({
+        assigneeObjectId: testObjectId1,
+        role: 'Azure Kubernetes Service Namespace User',
+      })
     );
     expect(mockCreateNamespaceRoleAssignment).toHaveBeenCalledWith(
-      expect.objectContaining({ role: 'Azure Kubernetes Service Namespace Contributor' })
+      expect.objectContaining({
+        assigneeObjectId: testObjectId1,
+        role: 'Azure Kubernetes Service Namespace Contributor',
+      })
     );
 
     expect(mockVerifyNamespaceAccess).toHaveBeenCalledTimes(1);
+    expect(mockVerifyNamespaceAccess).toHaveBeenCalledWith(
+      expect.objectContaining({ assigneeObjectId: testObjectId1 })
+    );
   });
 
   test('handles multiple users', async () => {
@@ -96,8 +111,8 @@ describe('assignRolesToNamespace', () => {
     const result = await assignRolesToNamespace({
       ...baseOptions,
       assignments: [
-        { email: 'user1@example.com', role: 'Admin' },
-        { email: 'user2@example.com', role: 'Reader' },
+        { objectId: testObjectId1, role: 'Admin' },
+        { objectId: testObjectId2, role: 'Reader' },
       ],
     });
 
@@ -117,12 +132,12 @@ describe('assignRolesToNamespace', () => {
 
     const result = await assignRolesToNamespace({
       ...baseOptions,
-      assignments: [{ email: 'user@example.com', role: 'Writer' }],
+      assignments: [{ objectId: testObjectId1, role: 'Writer' }],
     });
 
     expect(result.success).toBe(false);
     expect(result.errors).toHaveLength(1);
-    expect(result.errors[0]).toContain('user@example.com');
+    expect(result.errors[0]).toContain(testObjectId1);
     expect(result.errors[0]).toContain('Permission denied');
     // Should not attempt verification when role assignment fails
     expect(mockVerifyNamespaceAccess).not.toHaveBeenCalled();
@@ -134,7 +149,7 @@ describe('assignRolesToNamespace', () => {
 
     const result = await assignRolesToNamespace({
       ...baseOptions,
-      assignments: [{ email: 'user@example.com', role: 'Writer' }],
+      assignments: [{ objectId: testObjectId1, role: 'Writer' }],
     });
 
     expect(result.success).toBe(false);
@@ -157,15 +172,15 @@ describe('assignRolesToNamespace', () => {
     const result = await assignRolesToNamespace({
       ...baseOptions,
       assignments: [
-        { email: 'user1@example.com', role: 'Writer' },
-        { email: 'user2@example.com', role: 'Reader' },
+        { objectId: testObjectId1, role: 'Writer' },
+        { objectId: testObjectId2, role: 'Reader' },
       ],
     });
 
     expect(result.success).toBe(false);
     expect(result.results).toHaveLength(1); // user1 succeeded
     expect(result.errors).toHaveLength(1); // user2 failed
-    expect(result.errors[0]).toContain('user2@example.com');
+    expect(result.errors[0]).toContain(testObjectId2);
   });
 
   test('calls onProgress callback', async () => {
@@ -175,12 +190,12 @@ describe('assignRolesToNamespace', () => {
 
     await assignRolesToNamespace({
       ...baseOptions,
-      assignments: [{ email: 'user@example.com', role: 'Writer' }],
+      assignments: [{ objectId: testObjectId1, role: 'Writer' }],
       onProgress,
     });
 
     expect(onProgress).toHaveBeenCalled();
-    expect(onProgress).toHaveBeenCalledWith(expect.stringContaining('user@example.com'));
+    expect(onProgress).toHaveBeenCalledWith(expect.stringContaining(testObjectId1));
   });
 
   test('handles thrown exceptions from role assignment', async () => {
@@ -188,7 +203,7 @@ describe('assignRolesToNamespace', () => {
 
     const result = await assignRolesToNamespace({
       ...baseOptions,
-      assignments: [{ email: 'user@example.com', role: 'Writer' }],
+      assignments: [{ objectId: testObjectId1, role: 'Writer' }],
     });
 
     expect(result.success).toBe(false);
@@ -196,16 +211,16 @@ describe('assignRolesToNamespace', () => {
     expect(result.errors[0]).toContain('Network error');
   });
 
-  test('filters out empty email assignments', async () => {
+  test('filters out empty objectId assignments', async () => {
     mockCreateNamespaceRoleAssignment.mockResolvedValue({ success: true });
     mockVerifyNamespaceAccess.mockResolvedValue({ success: true, hasAccess: true });
 
     const result = await assignRolesToNamespace({
       ...baseOptions,
       assignments: [
-        { email: '', role: 'Writer' },
-        { email: '  ', role: 'Reader' },
-        { email: 'user@example.com', role: 'Admin' },
+        { objectId: '', role: 'Writer' },
+        { objectId: '  ', role: 'Reader' },
+        { objectId: testObjectId1, role: 'Admin' },
       ],
     });
 
@@ -226,7 +241,7 @@ describe('assignRolesToNamespace', () => {
       namespaceName: 'test-ns',
       subscriptionId: 'test-sub-id',
       // Note: no `t` provided — uses fallback
-      assignments: [{ email: 'user@example.com', role: 'Writer' }],
+      assignments: [{ objectId: testObjectId1, role: 'Writer' }],
       onProgress,
     });
 
@@ -234,6 +249,22 @@ describe('assignRolesToNamespace', () => {
     const progressMessages = onProgress.mock.calls.map(c => c[0]);
     const hasRawPlaceholder = progressMessages.some(msg => /\{\{/.test(msg));
     expect(hasRawPlaceholder).toBe(false);
-    expect(progressMessages.some(msg => msg.includes('user@example.com'))).toBe(true);
+    expect(progressMessages.some(msg => msg.includes(testObjectId1))).toBe(true);
+  });
+
+  test('passes objectId directly to role assignment', async () => {
+    mockCreateNamespaceRoleAssignment.mockResolvedValue({ success: true });
+    mockVerifyNamespaceAccess.mockResolvedValue({ success: true, hasAccess: true });
+
+    await assignRolesToNamespace({
+      ...baseOptions,
+      assignments: [{ objectId: testObjectId1, role: 'Admin' }],
+    });
+
+    // Role assignment should be called 3 times with the object ID directly
+    expect(mockCreateNamespaceRoleAssignment).toHaveBeenCalledTimes(3);
+    expect(mockCreateNamespaceRoleAssignment).toHaveBeenCalledWith(
+      expect.objectContaining({ assigneeObjectId: testObjectId1 })
+    );
   });
 });

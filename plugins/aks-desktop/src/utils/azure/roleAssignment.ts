@@ -44,7 +44,7 @@ export async function assignRolesToNamespace(
       );
     });
 
-  const validAssignments = assignments.filter(a => a.email.trim() !== '');
+  const validAssignments = assignments.filter(a => a.objectId.trim() !== '');
 
   if (validAssignments.length === 0) {
     onProgress?.(translate('No user assignments to process') + '...');
@@ -61,9 +61,9 @@ export async function assignRolesToNamespace(
   const assignmentErrors: string[] = [];
 
   for (const assignment of validAssignments) {
-    onProgress?.(translate('Adding user {{email}}', { email: assignment.email }) + '...');
-
+    const assigneeObjectId = assignment.objectId.trim();
     try {
+      onProgress?.(translate('Adding user {{objectId}}', { objectId: assigneeObjectId }) + '...');
       const azureRole = mapUIRoleToAzureRole(assignment.role);
 
       const rolesToAssign = [azureRole, AKS_NAMESPACE_USER_ROLE, AKS_NAMESPACE_CONTRIBUTOR_ROLE];
@@ -77,14 +77,15 @@ export async function assignRolesToNamespace(
 
       for (const role of rolesToAssign) {
         onProgress?.(
-          translate('Assigning {{role}} to {{email}}', { role, email: assignment.email }) + '...'
+          translate('Assigning {{role}} to {{objectId}}', { role, objectId: assigneeObjectId }) +
+            '...'
         );
 
         const roleResult = await createNamespaceRoleAssignment({
           clusterName,
           resourceGroup,
           namespaceName,
-          assignee: assignment.email,
+          assigneeObjectId,
           role,
           subscriptionId,
         });
@@ -111,8 +112,8 @@ export async function assignRolesToNamespace(
           })
           .join('; ');
         assignmentErrors.push(
-          translate('Failed to assign roles to user {{email}}. {{details}}', {
-            email: assignment.email,
+          translate('Failed to assign roles to user {{objectId}}. {{details}}', {
+            objectId: assigneeObjectId,
             details: failedRoleDetails,
           })
         );
@@ -120,38 +121,38 @@ export async function assignRolesToNamespace(
       }
 
       onProgress?.(
-        translate('Verifying access for user {{email}}', { email: assignment.email }) + '...'
+        translate('Verifying access for user {{objectId}}', { objectId: assigneeObjectId }) + '...'
       );
       const verifyResult = await verifyNamespaceAccess({
         clusterName,
         resourceGroup,
         namespaceName,
-        assignee: assignment.email,
+        assigneeObjectId,
         subscriptionId,
       });
 
       if (!verifyResult.success) {
         assignmentErrors.push(
-          translate('Failed to verify access for user {{email}}: {{message}}', {
-            email: assignment.email,
+          translate('Failed to verify access for user {{objectId}}: {{message}}', {
+            objectId: assigneeObjectId,
             message: verifyResult.error || translate('Verification failed'),
           })
         );
       } else if (!verifyResult.hasAccess) {
         assignmentErrors.push(
-          translate('User {{email}} does not have the expected access to the namespace', {
-            email: assignment.email,
+          translate('User {{objectId}} does not have the expected access to the namespace', {
+            objectId: assigneeObjectId,
           })
         );
       } else {
         assignmentResults.push(
-          translate('User {{email}} added successfully', { email: assignment.email })
+          translate('User {{objectId}} added successfully', { objectId: assigneeObjectId })
         );
       }
     } catch (userError) {
       assignmentErrors.push(
-        translate('Error processing user {{email}}: {{message}}', {
-          email: assignment.email,
+        translate('Error processing user {{objectId}}: {{message}}', {
+          objectId: assigneeObjectId,
           message: userError instanceof Error ? userError.message : String(userError),
         })
       );

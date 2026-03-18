@@ -28,8 +28,8 @@
  *
  *  AccessStep
  *  ├── empty state        — heading; intro text; "Add assignee" button enabled
- *  ├── invalid email      — textbox with "invalid"; error message; Remove button; Add disabled
- *  ├── valid email        — textbox "not invalid"; role combobox; Remove button; Add enabled
+ *  ├── invalid object ID      — textbox with "invalid"; error message; Remove button; Add disabled
+ *  ├── valid object ID        — textbox "not invalid"; role combobox; Remove button; Add enabled
  *  └── loading state      — all controls disabled
  *
  *  ReviewStep
@@ -37,7 +37,7 @@
  *  ├── NoAssignees        — Access Control heading counts "(0 assignee)"; no assignee paragraphs
  *  ├── NoDescription      — falls back to "No description provided" placeholder
  *  ├── UnresolvedResources — subscription falls back to "N/A"; cluster shows raw name
- *  └── SingleAssignee     — single assignee email + role announced
+ *  └── SingleAssignee     — single assignee object ID + role announced
  *
  *  NetworkingStep
  *  ├── Default     — h2 heading; intro text; Ingress/Egress comboboxes with current values
@@ -584,7 +584,7 @@ const ACCESS_FORM_DATA = {
   memoryRequest: 4096,
   cpuLimit: 4000,
   memoryLimit: 8192,
-  userAssignments: [{ email: 'alice@example.com', role: 'Admin' }],
+  userAssignments: [{ objectId: '00000000-1111-2222-3333-444444444444', role: 'Admin' }],
 };
 
 const ACCESS_VALIDATION = { isValid: true, errors: [] as string[], warnings: [] as string[] };
@@ -648,15 +648,15 @@ describe('SR: AccessStep — empty (no assignments)', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// AccessStep — invalid email
+// AccessStep — invalid object ID
 // ═══════════════════════════════════════════════════════════════════════════
-describe('SR: AccessStep — invalid email entered', () => {
-  it('announces the textbox with "invalid" state when email is malformed', async () => {
+describe('SR: AccessStep — invalid object ID entered', () => {
+  it('announces the textbox with "invalid" state when object ID is malformed', async () => {
     render(
       <AccessStep
         formData={{
           ...ACCESS_FORM_DATA,
-          userAssignments: [{ email: 'bad-email', role: 'Writer' }],
+          userAssignments: [{ objectId: 'not-a-uuid', role: 'Writer' }],
         }}
         onFormDataChange={() => {}}
         validation={ACCESS_VALIDATION}
@@ -676,7 +676,7 @@ describe('SR: AccessStep — invalid email entered', () => {
       <AccessStep
         formData={{
           ...ACCESS_FORM_DATA,
-          userAssignments: [{ email: 'bad-email', role: 'Writer' }],
+          userAssignments: [{ objectId: 'not-a-uuid', role: 'Writer' }],
         }}
         onFormDataChange={() => {}}
         validation={ACCESS_VALIDATION}
@@ -687,7 +687,7 @@ describe('SR: AccessStep — invalid email entered', () => {
     // MUI helperText is linked via aria-describedby and announced as part of the
     // textbox phrase, immediately accessible without extra Tab key presses
     const input = ps.find(p => /textbox/i.test(p) && /assignee/i.test(p));
-    expect(input).toMatch(/please enter a valid email/i);
+    expect(input).toMatch(/please enter a valid Azure AD object ID/i);
   });
 
   it('announces the Remove assignee button with its aria-label', async () => {
@@ -695,7 +695,7 @@ describe('SR: AccessStep — invalid email entered', () => {
       <AccessStep
         formData={{
           ...ACCESS_FORM_DATA,
-          userAssignments: [{ email: 'bad-email', role: 'Writer' }],
+          userAssignments: [{ objectId: 'not-a-uuid', role: 'Writer' }],
         }}
         onFormDataChange={() => {}}
         validation={ACCESS_VALIDATION}
@@ -711,7 +711,7 @@ describe('SR: AccessStep — invalid email entered', () => {
       <AccessStep
         formData={{
           ...ACCESS_FORM_DATA,
-          userAssignments: [{ email: 'bad-email', role: 'Writer' }],
+          userAssignments: [{ objectId: 'not-a-uuid', role: 'Writer' }],
         }}
         onFormDataChange={() => {}}
         validation={ACCESS_VALIDATION}
@@ -727,7 +727,7 @@ describe('SR: AccessStep — invalid email entered', () => {
       <AccessStep
         formData={{
           ...ACCESS_FORM_DATA,
-          userAssignments: [{ email: 'bad-email', role: 'Writer' }],
+          userAssignments: [{ objectId: 'not-a-uuid', role: 'Writer' }],
         }}
         onFormDataChange={() => {}}
         validation={ACCESS_VALIDATION}
@@ -740,15 +740,15 @@ describe('SR: AccessStep — invalid email entered', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// AccessStep — valid email
+// AccessStep — valid object ID
 // ═══════════════════════════════════════════════════════════════════════════
-describe('SR: AccessStep — valid email entered', () => {
-  it('announces the textbox as "not invalid" when email is valid', async () => {
+describe('SR: AccessStep — valid object ID entered', () => {
+  it('announces the textbox as "not invalid" when object ID is valid', async () => {
     render(
       <AccessStep
         formData={{
           ...ACCESS_FORM_DATA,
-          userAssignments: [{ email: 'user@example.com', role: 'Reader' }],
+          userAssignments: [{ objectId: '11111111-2222-3333-4444-555555555555', role: 'Reader' }],
         }}
         onFormDataChange={() => {}}
         validation={ACCESS_VALIDATION}
@@ -760,12 +760,12 @@ describe('SR: AccessStep — valid email entered', () => {
     expect(input).toMatch(/not invalid/i);
   });
 
-  it('announces the entered email address as the textbox value', async () => {
+  it('announces the entered object ID as the textbox value', async () => {
     render(
       <AccessStep
         formData={{
           ...ACCESS_FORM_DATA,
-          userAssignments: [{ email: 'user@example.com', role: 'Reader' }],
+          userAssignments: [{ objectId: '11111111-2222-3333-4444-555555555555', role: 'Reader' }],
         }}
         onFormDataChange={() => {}}
         validation={ACCESS_VALIDATION}
@@ -774,7 +774,7 @@ describe('SR: AccessStep — valid email entered', () => {
     await virtual.start({ container: document.body });
     const ps = await phrases();
     const input = ps.find(p => /textbox/i.test(p) && /assignee/i.test(p));
-    expect(input).toMatch(/user@example\.com/);
+    expect(input).toMatch(/11111111-2222-3333-4444-555555555555/);
   });
 
   it('announces the Role combobox with its current value', async () => {
@@ -782,7 +782,7 @@ describe('SR: AccessStep — valid email entered', () => {
       <AccessStep
         formData={{
           ...ACCESS_FORM_DATA,
-          userAssignments: [{ email: 'user@example.com', role: 'Reader' }],
+          userAssignments: [{ objectId: '11111111-2222-3333-4444-555555555555', role: 'Reader' }],
         }}
         onFormDataChange={() => {}}
         validation={ACCESS_VALIDATION}
@@ -800,7 +800,7 @@ describe('SR: AccessStep — valid email entered', () => {
       <AccessStep
         formData={{
           ...ACCESS_FORM_DATA,
-          userAssignments: [{ email: 'user@example.com', role: 'Reader' }],
+          userAssignments: [{ objectId: '11111111-2222-3333-4444-555555555555', role: 'Reader' }],
         }}
         onFormDataChange={() => {}}
         validation={ACCESS_VALIDATION}
@@ -817,7 +817,7 @@ describe('SR: AccessStep — valid email entered', () => {
       <AccessStep
         formData={{
           ...ACCESS_FORM_DATA,
-          userAssignments: [{ email: 'user@example.com', role: 'Reader' }],
+          userAssignments: [{ objectId: '11111111-2222-3333-4444-555555555555', role: 'Reader' }],
         }}
         onFormDataChange={() => {}}
         validation={ACCESS_VALIDATION}
@@ -832,12 +832,12 @@ describe('SR: AccessStep — valid email entered', () => {
 // AccessStep — loading state
 // ═══════════════════════════════════════════════════════════════════════════
 describe('SR: AccessStep — loading state (all controls disabled)', () => {
-  it('announces the email textbox as disabled', async () => {
+  it('announces the object ID textbox as disabled', async () => {
     render(
       <AccessStep
         formData={{
           ...ACCESS_FORM_DATA,
-          userAssignments: [{ email: 'user@example.com', role: 'Writer' }],
+          userAssignments: [{ objectId: '11111111-2222-3333-4444-555555555555', role: 'Writer' }],
         }}
         onFormDataChange={() => {}}
         validation={ACCESS_VALIDATION}
@@ -855,7 +855,7 @@ describe('SR: AccessStep — loading state (all controls disabled)', () => {
       <AccessStep
         formData={{
           ...ACCESS_FORM_DATA,
-          userAssignments: [{ email: 'user@example.com', role: 'Writer' }],
+          userAssignments: [{ objectId: '11111111-2222-3333-4444-555555555555', role: 'Writer' }],
         }}
         onFormDataChange={() => {}}
         validation={ACCESS_VALIDATION}
@@ -873,7 +873,7 @@ describe('SR: AccessStep — loading state (all controls disabled)', () => {
       <AccessStep
         formData={{
           ...ACCESS_FORM_DATA,
-          userAssignments: [{ email: 'user@example.com', role: 'Writer' }],
+          userAssignments: [{ objectId: '11111111-2222-3333-4444-555555555555', role: 'Writer' }],
         }}
         onFormDataChange={() => {}}
         validation={ACCESS_VALIDATION}
@@ -889,7 +889,7 @@ describe('SR: AccessStep — loading state (all controls disabled)', () => {
       <AccessStep
         formData={{
           ...ACCESS_FORM_DATA,
-          userAssignments: [{ email: 'user@example.com', role: 'Writer' }],
+          userAssignments: [{ objectId: '11111111-2222-3333-4444-555555555555', role: 'Writer' }],
         }}
         onFormDataChange={() => {}}
         validation={ACCESS_VALIDATION}
@@ -936,8 +936,8 @@ const REVIEW_BASE_PROPS: ReviewStepProps = {
     cpuLimit: 4000,
     memoryLimit: 8192,
     userAssignments: [
-      { email: 'alice@example.com', role: 'Admin' },
-      { email: 'bob@example.com', role: 'Reader' },
+      { objectId: '00000000-1111-2222-3333-444444444444', role: 'Admin' },
+      { objectId: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', role: 'Reader' },
     ],
   },
   subscriptions: [REVIEW_SUBSCRIPTION],
@@ -1041,13 +1041,13 @@ describe('SR: ReviewStep — FullConfiguration (all sections)', () => {
     expect(await phrases()).toContain('heading, Access Control (2 assignee), level 3');
   });
 
-  it('announces each assignee email and role in order', async () => {
+  it('announces each assignee object ID and role in order', async () => {
     render(<ReviewStep {...REVIEW_BASE_PROPS} />);
     await virtual.start({ container: document.body });
     const ps = await phrases();
-    expect(ps).toContain('alice@example.com');
+    expect(ps).toContain('00000000-1111-2222-3333-444444444444');
     expect(ps).toContain('Admin');
-    expect(ps).toContain('bob@example.com');
+    expect(ps).toContain('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
     expect(ps).toContain('Reader');
   });
 
@@ -1089,7 +1089,7 @@ describe('SR: ReviewStep — NoAssignees', () => {
     expect(await phrases()).toContain('heading, Access Control (0 assignee), level 3');
   });
 
-  it('does NOT announce any assignee emails when list is empty', async () => {
+  it('does NOT announce any assignee object IDs when list is empty', async () => {
     render(
       <ReviewStep
         {...REVIEW_BASE_PROPS}
@@ -1164,7 +1164,7 @@ describe('SR: ReviewStep — SingleAssignee', () => {
         {...REVIEW_BASE_PROPS}
         formData={{
           ...REVIEW_BASE_PROPS.formData,
-          userAssignments: [{ email: 'charlie@example.com', role: 'Writer' }],
+          userAssignments: [{ objectId: '22222222-3333-4444-5555-666666666666', role: 'Writer' }],
         }}
       />
     );
@@ -1172,19 +1172,19 @@ describe('SR: ReviewStep — SingleAssignee', () => {
     expect(await phrases()).toContain('heading, Access Control (1 assignee), level 3');
   });
 
-  it('announces the single assignee email and role', async () => {
+  it('announces the single assignee object ID and role', async () => {
     render(
       <ReviewStep
         {...REVIEW_BASE_PROPS}
         formData={{
           ...REVIEW_BASE_PROPS.formData,
-          userAssignments: [{ email: 'charlie@example.com', role: 'Writer' }],
+          userAssignments: [{ objectId: '22222222-3333-4444-5555-666666666666', role: 'Writer' }],
         }}
       />
     );
     await virtual.start({ container: document.body });
     const ps = await phrases();
-    expect(ps).toContain('charlie@example.com');
+    expect(ps).toContain('22222222-3333-4444-5555-666666666666');
     expect(ps).toContain('Writer');
   });
 });

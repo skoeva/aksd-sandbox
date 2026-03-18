@@ -249,7 +249,7 @@ describe('useCreateAKSProjectWizard', () => {
     vi.mocked(useFormData).mockReturnValue({
       formData: {
         ...defaultFormData,
-        userAssignments: [{ email: 'user@example.com', role: 'Admin' }],
+        userAssignments: [{ objectId: '00000000-1111-2222-3333-444444444444', role: 'Admin' }],
       },
       updateFormData: vi.fn(),
       resetFormData: vi.fn(),
@@ -277,7 +277,7 @@ describe('useCreateAKSProjectWizard', () => {
     vi.mocked(useFormData).mockReturnValue({
       formData: {
         ...defaultFormData,
-        userAssignments: [{ email: 'user@example.com', role: 'Admin' }],
+        userAssignments: [{ objectId: '00000000-1111-2222-3333-444444444444', role: 'Admin' }],
       },
       updateFormData: vi.fn(),
       resetFormData: vi.fn(),
@@ -439,7 +439,7 @@ describe('useCreateAKSProjectWizard', () => {
     vi.mocked(useFormData).mockReturnValue({
       formData: {
         ...defaultFormData,
-        userAssignments: [{ email: 'user@example.com', role: 'Admin' }],
+        userAssignments: [{ objectId: '00000000-1111-2222-3333-444444444444', role: 'Admin' }],
       },
       updateFormData: vi.fn(),
       resetFormData: vi.fn(),

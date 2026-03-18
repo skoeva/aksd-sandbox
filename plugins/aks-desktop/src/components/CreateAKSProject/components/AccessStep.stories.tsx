@@ -18,7 +18,7 @@ const BASE_FORM_DATA = {
   memoryRequest: 4096,
   cpuLimit: 4000,
   memoryLimit: 8192,
-  userAssignments: [{ email: 'alice@example.com', role: 'Admin' }],
+  userAssignments: [{ objectId: '00000000-1111-2222-3333-444444444444', role: 'Admin' }],
 };
 
 const BASE_PROPS: AccessStepProps = {
@@ -43,9 +43,9 @@ export const MultipleAssignees: StoryFn<AccessStepProps> = () => (
     formData={{
       ...BASE_FORM_DATA,
       userAssignments: [
-        { email: 'alice@example.com', role: 'Admin' },
-        { email: 'bob@contoso.com', role: 'Writer' },
-        { email: 'charlie@dev.org', role: 'Reader' },
+        { objectId: '00000000-1111-2222-3333-444444444444', role: 'Admin' },
+        { objectId: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', role: 'Writer' },
+        { objectId: '11111111-2222-3333-4444-555555555555', role: 'Reader' },
       ],
     }}
   />
@@ -56,13 +56,13 @@ export const NoAssignees: StoryFn<AccessStepProps> = () => (
   <AccessStep {...BASE_PROPS} formData={{ ...BASE_FORM_DATA, userAssignments: [] }} />
 );
 
-/** Invalid email triggers validation error. */
-export const InvalidEmail: StoryFn<AccessStepProps> = () => (
+/** Invalid object ID triggers validation error. */
+export const InvalidObjectId: StoryFn<AccessStepProps> = () => (
   <AccessStep
     {...BASE_PROPS}
     formData={{
       ...BASE_FORM_DATA,
-      userAssignments: [{ email: 'not-an-email', role: 'Writer' }],
+      userAssignments: [{ objectId: 'not-a-uuid', role: 'Writer' }],
     }}
   />
 );
