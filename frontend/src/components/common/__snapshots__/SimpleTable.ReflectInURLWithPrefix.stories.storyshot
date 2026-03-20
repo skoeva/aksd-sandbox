@@ -18,11 +18,17 @@
         ?p=2
       </p>
       <div
+        aria-atomic="true"
+        aria-live="polite"
+        class="MuiBox-root css-ty8jgw"
+        role="status"
+      />
+      <div
         class="MuiPaper-root MuiPaper-outlined MuiPaper-rounded MuiTableContainer-root css-onzayo-MuiPaper-root-MuiTableContainer-root"
         tabindex="0"
       >
         <table
-          class="MuiTable-root css-14jq1ex-MuiTable-root"
+          class="MuiTable-root css-bv8t57-MuiTable-root"
         >
           <thead
             class="MuiTableHead-root css-15wwp11-MuiTableHead-root"

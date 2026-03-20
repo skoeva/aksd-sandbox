@@ -9,11 +9,17 @@
         Outer Container Title
       </h6>
       <div
+        aria-atomic="true"
+        aria-live="polite"
+        class="MuiBox-root css-ty8jgw"
+        role="status"
+      />
+      <div
         class="MuiPaper-root MuiPaper-outlined MuiPaper-rounded MuiTableContainer-root css-1sjkwtf-MuiPaper-root-MuiTableContainer-root"
         tabindex="0"
       >
         <table
-          class="MuiTable-root css-fekg5f-MuiTable-root"
+          class="MuiTable-root css-qzmaqi-MuiTable-root"
         >
           <tbody
             class="MuiTableBody-root css-apqrd9-MuiTableBody-root"
