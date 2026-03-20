@@ -110,11 +110,17 @@
       </div>
     </div>
     <div
+      aria-atomic="true"
+      aria-live="polite"
+      class="MuiBox-root css-ty8jgw"
+      role="status"
+    />
+    <div
       class="MuiPaper-root MuiPaper-outlined MuiPaper-rounded MuiTableContainer-root css-onzayo-MuiPaper-root-MuiTableContainer-root"
       tabindex="0"
     >
       <table
-        class="MuiTable-root css-fekg5f-MuiTable-root"
+        class="MuiTable-root css-qzmaqi-MuiTable-root"
       >
         <thead
           class="MuiTableHead-root css-15wwp11-MuiTableHead-root"
@@ -159,10 +165,7 @@
               style="grid-column: span 4;"
             >
               <div
-                aria-atomic="true"
-                aria-live="polite"
                 class="MuiBox-root css-19midj6"
-                role="status"
               >
                 <p
                   class="MuiTypography-root MuiTypography-body1 MuiTypography-alignCenter css-18lkse1-MuiTypography-root"
