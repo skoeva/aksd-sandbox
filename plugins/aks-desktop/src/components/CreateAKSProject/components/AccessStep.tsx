@@ -9,7 +9,7 @@ import React, { useEffect, useRef } from 'react';
 import type { AccessStepProps, RoleType, UserAssignment } from '../types';
 import { AVAILABLE_ROLES } from '../types';
 import { isValidObjectId } from '../validators';
-import { FormField } from './FormField';
+import { UserSearchField } from './UserSearchField';
 
 function getRoleDescription(t: (key: string) => string, role: RoleType): string {
   switch (role) {
@@ -54,9 +54,25 @@ export const AccessStep: React.FC<AccessStepProps> = ({
     prevCountRef.current = formData.userAssignments.length;
   }, [formData.userAssignments.length]);
 
-  const handleAssignmentChange = (index: number, field: keyof UserAssignment, value: string) => {
+  const handleAssignmentChange = (index: number, objectId: string, displayName?: string) => {
     const updatedAssignments = [...formData.userAssignments];
-    updatedAssignments[index] = { ...updatedAssignments[index], [field]: value };
+    const prevAssignment = updatedAssignments[index];
+
+    // Keep explicit displayName; clear stale one when objectId changes; otherwise preserve
+    const nextDisplayName =
+      displayName ?? (prevAssignment?.objectId !== objectId ? '' : prevAssignment?.displayName);
+
+    updatedAssignments[index] = {
+      ...prevAssignment,
+      objectId,
+      displayName: nextDisplayName,
+    };
+    onFormDataChange({ userAssignments: updatedAssignments });
+  };
+
+  const handleRoleChange = (index: number, role: string) => {
+    const updatedAssignments = [...formData.userAssignments];
+    updatedAssignments[index] = { ...updatedAssignments[index], role };
     onFormDataChange({ userAssignments: updatedAssignments });
   };
 
@@ -93,12 +109,13 @@ export const AccessStep: React.FC<AccessStepProps> = ({
           <React.Fragment key={idx}>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
-                <FormField
-                  label={`${t('Assignee')} ${idx + 1} (${t('Azure AD object ID')})`}
-                  type="text"
+                <UserSearchField
+                  label={`${t('Assignee')} ${idx + 1}`}
                   value={assignment.objectId}
-                  onChange={value => handleAssignmentChange(idx, 'objectId', value as string)}
-                  placeholder={t('00000000-0000-0000-0000-000000000000')}
+                  displayName={assignment.displayName}
+                  onChange={(objectId, displayName) =>
+                    handleAssignmentChange(idx, objectId, displayName)
+                  }
                   disabled={loading}
                   error={
                     assignment.objectId.trim() === '' ||
@@ -106,9 +123,9 @@ export const AccessStep: React.FC<AccessStepProps> = ({
                   }
                   helperText={
                     assignment.objectId.trim() === ''
-                      ? t('Please enter a valid Azure AD object ID or remove this entry')
+                      ? t('Search for a user or remove this entry')
                       : !isValidObjectId(assignment.objectId.trim())
-                      ? t('Please enter a valid Azure AD object ID (UUID format)')
+                      ? t('Select a user from the search results or enter a valid object ID (UUID)')
                       : ''
                   }
                   inputRef={
@@ -124,7 +141,7 @@ export const AccessStep: React.FC<AccessStepProps> = ({
                 variant="outlined"
                 label={t('Role')}
                 value={assignment.role}
-                onChange={e => handleAssignmentChange(idx, 'role', e.target.value as string)}
+                onChange={e => handleRoleChange(idx, e.target.value)}
                 disabled={loading}
                 SelectProps={{
                   renderValue: (value: string) => value,

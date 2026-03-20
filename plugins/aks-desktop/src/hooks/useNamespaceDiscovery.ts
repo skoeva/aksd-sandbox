@@ -64,16 +64,8 @@ function isAksDesktopProject(labels: Record<string, string> | null): boolean {
   );
 }
 
-/**
- * Returns the query string formatted for the current platform's shell.
- * On Windows, the Azure Resource Graph query must be wrapped in double quotes
- * because `az graph query -q` passes the value through cmd.exe which strips
- * single quotes. On Unix, the query is passed as-is (child_process handles quoting).
- */
-function quoteForPlatform(query: string): string {
-  const isWindows = (window as any)?.desktopApi?.platform === 'win32';
-  return isWindows ? `"${query}"` : query;
-}
+// Platform-aware quoting for Azure CLI arguments — see shared module for details.
+import { quoteForPlatform } from '../utils/shared/quoteForPlatform';
 
 function isAlreadyImported(ns: {
   name: string;

@@ -387,7 +387,7 @@ describe('ImportAKSProjects', () => {
     });
   });
 
-  test('calls setClusterSettings after successful import', async () => {
+  test('does not create allowedNamespaces restriction when none existed (#489)', async () => {
     const ns = makeDiscoveredNamespace({
       name: 'ns1',
       clusterName: 'test-cluster',
@@ -407,14 +407,55 @@ describe('ImportAKSProjects', () => {
     // Click Import Selected (already a project, no conversion dialog)
     fireEvent.click(screen.getByText('Import Selected Projects'));
 
+    // Wait for import to finish
     await waitFor(() => {
-      expect(mockSetClusterSettings).toHaveBeenCalledWith(
-        'test-cluster',
-        expect.objectContaining({
-          allowedNamespaces: expect.arrayContaining(['ns1']),
-        })
-      );
+      expect(screen.getByText('Go To Projects')).toBeInTheDocument();
     });
+
+    // When allowedNamespaces was empty, setClusterSettings should NOT be called
+    // to avoid hiding all other projects (see #489)
+    expect(mockSetClusterSettings).not.toHaveBeenCalled();
+  });
+
+  test('appends to allowedNamespaces when restriction already exists', async () => {
+    // Override the mock to return a non-empty allowedNamespaces
+    vi.mocked(mockSetClusterSettings).mockClear();
+    const clusterSettingsMod = await import('../../utils/shared/clusterSettings');
+    vi.spyOn(clusterSettingsMod, 'getClusterSettings').mockReturnValue({
+      allowedNamespaces: ['existing-ns'],
+    });
+
+    const ns = makeDiscoveredNamespace({
+      name: 'new-ns',
+      clusterName: 'test-cluster',
+      isAksProject: true,
+      category: 'needs-import',
+    });
+    mockUseNamespaceDiscovery.mockReturnValue(defaultDiscoveryReturn([ns]));
+    mockRegisterAKSCluster.mockResolvedValue({ success: true });
+
+    render(<ImportAKSProjects />);
+
+    // Select the namespace
+    const row = screen.getByTestId('row-new-ns');
+    const checkbox = row.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    fireEvent.click(checkbox);
+
+    // Click Import Selected (already a project, no conversion dialog)
+    fireEvent.click(screen.getByText('Import Selected Projects'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Go To Projects')).toBeInTheDocument();
+    });
+
+    // When allowedNamespaces was non-empty, setClusterSettings should be called
+    // with the union of existing and imported namespaces
+    expect(mockSetClusterSettings).toHaveBeenCalledWith('test-cluster', {
+      allowedNamespaces: ['existing-ns', 'new-ns'],
+    });
+
+    // Clean up spy
+    vi.restoreAllMocks();
   });
 
   test('handles mixed results with some successes and some failures', async () => {

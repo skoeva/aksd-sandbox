@@ -264,18 +264,21 @@ function ImportAKSProjectsContent() {
           }
         }
 
-        // 2c: Update allowed namespaces in localStorage
+        // 2c: Update allowed namespaces in localStorage — only if the user
+        // already has an allowedNamespaces restriction configured.  Creating a
+        // new restriction as a side-effect of import would hide every other
+        // project the user can see (see #489).
         const importableInCluster = namespacesInCluster.filter(ns => !failedNames.has(ns.name));
         if (importableInCluster.length > 0) {
           try {
             const settings = getClusterSettings(clusterName);
-            settings.allowedNamespaces = [
-              ...new Set([
-                ...(settings.allowedNamespaces ?? []),
-                ...importableInCluster.map(ns => ns.name),
-              ]),
-            ];
-            setClusterSettings(clusterName, settings);
+            const existing = settings.allowedNamespaces;
+            if (existing && existing.length > 0) {
+              settings.allowedNamespaces = [
+                ...new Set([...existing, ...importableInCluster.map(ns => ns.name)]),
+              ];
+              setClusterSettings(clusterName, settings);
+            }
           } catch (e) {
             console.error('Failed to update allowed namespaces for cluster ' + clusterName, e);
           }

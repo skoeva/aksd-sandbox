@@ -25,6 +25,7 @@ export interface AzureCluster {
 
 export interface UserAssignment {
   objectId: string;
+  displayName?: string;
   role: string;
 }
 

@@ -257,7 +257,9 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ formData, subscriptions,
                     {`${t('Assignee')} ${idx + 1}`}:
                   </Typography>
                   <Typography variant="body1" sx={{ mb: 1 }}>
-                    {assignment.objectId || t('Not specified')}
+                    {assignment.displayName
+                      ? `${assignment.displayName} (${assignment.objectId})`
+                      : assignment.objectId || t('Not specified')}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold' }}>
                     {t('Role')}:

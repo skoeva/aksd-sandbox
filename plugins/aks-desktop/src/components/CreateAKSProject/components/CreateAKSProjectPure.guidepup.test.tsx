@@ -632,7 +632,7 @@ describe('SR: AccessStep — empty (no assignments)', () => {
     expect(ps).not.toContain('button, Add assignee, disabled');
   });
 
-  it('does NOT announce any textbox or Remove button when empty', async () => {
+  it('does NOT announce any assignee input or Remove button when empty', async () => {
     render(
       <AccessStep
         formData={{ ...ACCESS_FORM_DATA, userAssignments: [] }}
@@ -642,7 +642,7 @@ describe('SR: AccessStep — empty (no assignments)', () => {
     );
     await virtual.start({ container: document.body });
     const ps = await phrases();
-    expect(ps.every(p => !/textbox/i.test(p))).toBe(true);
+    expect(ps.every(p => !/assignee/i.test(p) || /add assignee/i.test(p))).toBe(true);
     expect(ps.every(p => !/remove assignee/i.test(p))).toBe(true);
   });
 });
@@ -664,7 +664,7 @@ describe('SR: AccessStep — invalid object ID entered', () => {
     );
     await virtual.start({ container: document.body });
     const ps = await phrases();
-    const input = ps.find(p => /textbox/i.test(p) && /assignee/i.test(p));
+    const input = ps.find(p => /combobox/i.test(p) && /assignee/i.test(p));
     // aria-invalid → SR announces "invalid" — critical for screen reader users to
     // know the field has an error without relying on colour alone
     expect(input).toMatch(/\binvalid\b/i);
@@ -686,8 +686,8 @@ describe('SR: AccessStep — invalid object ID entered', () => {
     const ps = await phrases();
     // MUI helperText is linked via aria-describedby and announced as part of the
     // textbox phrase, immediately accessible without extra Tab key presses
-    const input = ps.find(p => /textbox/i.test(p) && /assignee/i.test(p));
-    expect(input).toMatch(/please enter a valid Azure AD object ID/i);
+    const input = ps.find(p => /combobox/i.test(p) && /assignee/i.test(p));
+    expect(input).toMatch(/select a user from the search results or enter a valid object ID/i);
   });
 
   it('announces the Remove assignee button with its aria-label', async () => {
@@ -756,7 +756,7 @@ describe('SR: AccessStep — valid object ID entered', () => {
     );
     await virtual.start({ container: document.body });
     const ps = await phrases();
-    const input = ps.find(p => /textbox/i.test(p) && /assignee/i.test(p));
+    const input = ps.find(p => /combobox/i.test(p) && /assignee/i.test(p));
     expect(input).toMatch(/not invalid/i);
   });
 
@@ -773,7 +773,7 @@ describe('SR: AccessStep — valid object ID entered', () => {
     );
     await virtual.start({ container: document.body });
     const ps = await phrases();
-    const input = ps.find(p => /textbox/i.test(p) && /assignee/i.test(p));
+    const input = ps.find(p => /combobox/i.test(p) && /assignee/i.test(p));
     expect(input).toMatch(/11111111-2222-3333-4444-555555555555/);
   });
 
@@ -846,7 +846,7 @@ describe('SR: AccessStep — loading state (all controls disabled)', () => {
     );
     await virtual.start({ container: document.body });
     const ps = await phrases();
-    const input = ps.find(p => /textbox/i.test(p) && /assignee/i.test(p));
+    const input = ps.find(p => /combobox/i.test(p) && /assignee/i.test(p));
     expect(input).toMatch(/disabled/i);
   });
 

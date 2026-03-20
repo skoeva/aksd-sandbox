@@ -29,7 +29,7 @@ export const STORAGE_KEY_PREFIX = 'aks-desktop:pipeline-state:';
 export const SCHEMA_VERSION = 1;
 
 /** Version of the containerization-assist-mcp used in agent setup steps. */
-export const CONTAINERIZATION_MCP_VERSION = '1.2.0';
+export const CONTAINERIZATION_MCP_VERSION = '1.3.2';
 
 /** Default polling interval for GitHub API checks (5 seconds). */
 export const POLLING_INTERVAL_MS = 5_000;
