@@ -3,11 +3,7 @@
 
 import { K8s, useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { useEffect, useState } from 'react';
-
-/** Sanitizes a value for use in a Kubernetes label selector. */
-function sanitizeLabelValue(value: string): string {
-  return value.replace(/[^a-zA-Z0-9._-]/g, '').slice(0, 63);
-}
+import { sanitizeLabelValue } from '../../../utils/kubernetes/k8sNames';
 
 /** Minimal shape of a K8s Pod resource as accessed by this hook. */
 interface PodResource {

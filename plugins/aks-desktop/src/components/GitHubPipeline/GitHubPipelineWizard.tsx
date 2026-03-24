@@ -5,6 +5,7 @@ import { Icon } from '@iconify/react';
 import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { Alert, Box, Button, CircularProgress, Typography } from '@mui/material';
 import React, { useEffect, useRef } from 'react';
+import { useNamespaceCapabilities } from '../../hooks/useNamespaceCapabilities';
 import type { GitHubRepo } from '../../types/github';
 import { openExternalUrl } from '../../utils/shared/openExternalUrl';
 import type { ContainerConfig } from '../DeployWizard/hooks/useContainerConfiguration';
@@ -125,6 +126,12 @@ export function GitHubPipelineWizard({
 }: GitHubPipelineWizardProps) {
   const { t } = useTranslation();
   const localContainerConfig = useContainerConfiguration(appName);
+  const { isManagedNamespace, azureRbacEnabled } = useNamespaceCapabilities({
+    subscriptionId,
+    resourceGroup,
+    clusterName,
+    namespace,
+  });
 
   useEffect(() => {
     if (containerConfig) {
@@ -237,9 +244,14 @@ export function GitHubPipelineWizard({
           <WorkloadIdentitySetup
             subscriptionId={subscriptionId}
             resourceGroup={resourceGroup}
+            clusterName={clusterName}
             repo={selectedRepo}
             identitySetup={identitySetup}
             projectName={resolvedProjectName ?? namespace}
+            acrResourceId={pipeline.state.config?.acrResourceId}
+            isManagedNamespace={isManagedNamespace}
+            namespaceName={namespace}
+            azureRbacEnabled={azureRbacEnabled}
           />
         );
       }

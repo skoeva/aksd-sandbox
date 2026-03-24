@@ -17,16 +17,25 @@ import { StepStatusIcon } from './StepStatusIcon';
 interface WorkloadIdentitySetupProps {
   subscriptionId: string;
   resourceGroup: string;
+  clusterName: string;
   repo: GitHubRepo;
   identitySetup: UseWorkloadIdentitySetupReturn;
   projectName: string;
+  /** Full Azure resource ID of the ACR. Omit to skip ACR roles. */
+  acrResourceId?: string;
+  /** Whether the target namespace is a managed namespace. */
+  isManagedNamespace?: boolean;
+  /** Name of the managed namespace (required if isManagedNamespace is true). */
+  namespaceName?: string;
+  /** Whether Azure RBAC for Kubernetes is enabled on the cluster. */
+  azureRbacEnabled?: boolean;
 }
 
 const STATUS_ORDER = [
   'creating-rg',
   'checking',
   'creating-identity',
-  'assigning-role',
+  'assigning-roles',
   'creating-credential',
   'done',
 ] as const;
@@ -36,7 +45,7 @@ function getStatusSteps(t: (key: string) => string) {
     { key: 'creating-rg', label: t('Ensuring resource group exists...') },
     { key: 'checking', label: t('Checking for existing identity...') },
     { key: 'creating-identity', label: t('Creating managed identity...') },
-    { key: 'assigning-role', label: t('Assigning AKS Cluster User Role...') },
+    { key: 'assigning-roles', label: t('Assigning required Azure RBAC roles...') },
     { key: 'creating-credential', label: t('Configuring federated credential...') },
     { key: 'done', label: t('Workload identity configured') },
   ] as const;
@@ -56,9 +65,14 @@ function getStepStatus(step: string, currentStatus: string, lastActiveStatus: st
 export function WorkloadIdentitySetup({
   subscriptionId,
   resourceGroup,
+  clusterName,
   repo,
   identitySetup,
   projectName,
+  acrResourceId,
+  isManagedNamespace,
+  namespaceName,
+  azureRbacEnabled,
 }: WorkloadIdentitySetupProps) {
   const { status, error, setupWorkloadIdentity } = identitySetup;
   const { t } = useTranslation();
@@ -84,7 +98,12 @@ export function WorkloadIdentitySetup({
       resourceGroup,
       identityResourceGroup: identityRG.trim(),
       projectName,
+      clusterName,
       repo,
+      acrResourceId,
+      isManagedNamespace,
+      namespaceName,
+      azureRbacEnabled,
     };
     setupWorkloadIdentity(config);
   };
@@ -128,10 +147,12 @@ export function WorkloadIdentitySetup({
               />
               <Box>
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  {t('Role Assignment')}
+                  {t('Role Assignments')}
                 </Typography>
                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                  {t('"AKS Cluster User Role" scoped to the resource group')}
+                  {t(
+                    'Required Azure RBAC roles for cluster access, deployment, and container registry'
+                  )}
                 </Typography>
               </Box>
             </Box>

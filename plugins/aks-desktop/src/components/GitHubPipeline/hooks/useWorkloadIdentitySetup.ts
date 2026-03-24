@@ -2,22 +2,16 @@
 // Licensed under the Apache 2.0.
 
 import { useCallback, useState } from 'react';
-import {
-  assignRoleToIdentity,
-  createFederatedCredential,
-  createManagedIdentity,
-  createResourceGroup,
-  getManagedIdentity,
-  getResourceGroupLocation,
-  resourceGroupExists,
-} from '../../../utils/azure/az-cli';
+import { createFederatedCredential } from '../../../utils/azure/az-federation';
+import { ensureIdentityWithRoles } from '../../../utils/azure/identityWithRoles';
+import { sanitizeDnsName } from '../../../utils/kubernetes/k8sNames';
 
 export type WorkloadIdentitySetupStatus =
   | 'idle'
   | 'creating-rg'
   | 'checking'
   | 'creating-identity'
-  | 'assigning-role'
+  | 'assigning-roles'
   | 'creating-credential'
   | 'done'
   | 'error';
@@ -42,11 +36,20 @@ export interface WorkloadIdentitySetupConfig {
   resourceGroup: string;
   identityResourceGroup: string;
   projectName: string;
+  clusterName: string;
   repo: { owner: string; repo: string; defaultBranch: string };
+  /** Full Azure resource ID of the ACR. Omit to skip ACR roles. */
+  acrResourceId?: string;
+  /** Whether the target namespace is a managed namespace. */
+  isManagedNamespace?: boolean;
+  /** Name of the managed namespace (required if isManagedNamespace is true). */
+  namespaceName?: string;
+  /** Whether Azure RBAC for Kubernetes is enabled on the cluster. */
+  azureRbacEnabled?: boolean;
 }
 
 export function getIdentityName(projectName: string): string {
-  return `id-${projectName}-github`;
+  return sanitizeDnsName(`id-${projectName}-github`, 128, 'id-app-github');
 }
 
 export const useWorkloadIdentitySetup = (): UseWorkloadIdentitySetupReturn => {
@@ -55,86 +58,37 @@ export const useWorkloadIdentitySetup = (): UseWorkloadIdentitySetupReturn => {
   const [result, setResult] = useState<WorkloadIdentitySetupResult | null>(null);
 
   const setupWorkloadIdentity = useCallback(async (config: WorkloadIdentitySetupConfig) => {
-    const { subscriptionId, resourceGroup, identityResourceGroup, projectName, repo } = config;
+    const {
+      subscriptionId,
+      resourceGroup,
+      identityResourceGroup,
+      projectName,
+      clusterName,
+      repo,
+      acrResourceId,
+      isManagedNamespace = false,
+      namespaceName,
+      azureRbacEnabled,
+    } = config;
     const identityName = getIdentityName(projectName);
 
     setError(null);
     setResult(null);
 
     try {
-      // Step 1: Ensure identity resource group exists
-      setStatus('creating-rg');
-      const rgCheck = await resourceGroupExists({
-        resourceGroupName: identityResourceGroup,
-        subscriptionId,
-      });
-
-      if (rgCheck.error) {
-        throw new Error(rgCheck.error);
-      }
-
-      if (!rgCheck.exists) {
-        const location = await getResourceGroupLocation({
-          resourceGroupName: resourceGroup,
-          subscriptionId,
-        });
-        const rgResult = await createResourceGroup({
-          resourceGroupName: identityResourceGroup,
-          location,
-          subscriptionId,
-        });
-        if (!rgResult.success) {
-          throw new Error(rgResult.error ?? 'Failed to create identity resource group');
-        }
-      }
-
-      // Step 2: Check if identity already exists
-      setStatus('checking');
-      const existing = await getManagedIdentity({
-        identityName,
-        resourceGroup: identityResourceGroup,
-        subscriptionId,
-      });
-
-      let clientId: string;
-      let principalId: string;
-      let tenantId: string;
-      let isExisting = false;
-
-      if (existing.success && existing.clientId && existing.principalId && existing.tenantId) {
-        clientId = existing.clientId;
-        principalId = existing.principalId;
-        tenantId = existing.tenantId;
-        isExisting = true;
-      } else if (!existing.success && !existing.notFound) {
-        // Real error (network, permissions, etc.) — don't silently create a new identity
-        throw new Error(existing.error ?? 'Failed to check for existing managed identity');
-      } else {
-        // Step 3: Create the identity
-        setStatus('creating-identity');
-        const created = await createManagedIdentity({
-          identityName,
-          resourceGroup: identityResourceGroup,
-          subscriptionId,
-        });
-        if (!created.success || !created.clientId || !created.principalId || !created.tenantId) {
-          throw new Error(created.error ?? 'Failed to create managed identity');
-        }
-        clientId = created.clientId;
-        principalId = created.principalId;
-        tenantId = created.tenantId;
-      }
-
-      // Step 4: Assign AKS Cluster User Role
-      setStatus('assigning-role');
-      const roleResult = await assignRoleToIdentity({
-        principalId,
+      // Steps 1-4: Ensure RG + identity + roles via shared utility
+      const identity = await ensureIdentityWithRoles({
         subscriptionId,
         resourceGroup,
+        identityResourceGroup,
+        identityName,
+        clusterName,
+        acrResourceId,
+        isManagedNamespace,
+        namespaceName,
+        azureRbacEnabled,
+        onStatusChange: setStatus,
       });
-      if (!roleResult.success) {
-        throw new Error(roleResult.error ?? 'Failed to assign role');
-      }
 
       // Step 5: Create federated credential
       setStatus('creating-credential');
@@ -151,15 +105,16 @@ export const useWorkloadIdentitySetup = (): UseWorkloadIdentitySetupReturn => {
       }
 
       const setupResult: WorkloadIdentitySetupResult = {
-        clientId,
-        tenantId,
-        principalId,
+        clientId: identity.clientId,
+        tenantId: identity.tenantId,
+        principalId: identity.principalId,
         identityName,
-        isExisting,
+        isExisting: identity.isExisting,
       };
       setResult(setupResult);
       setStatus('done');
     } catch (err) {
+      console.error('[WorkloadIdentitySetup] Setup failed:', err);
       setError(err instanceof Error ? err.message : 'Unknown error during identity setup');
       setStatus('error');
     }
