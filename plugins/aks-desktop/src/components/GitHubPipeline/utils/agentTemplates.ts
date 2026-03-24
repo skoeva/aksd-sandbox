@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the Apache 2.0.
 
+import { getServiceAccountName } from '../../../utils/kubernetes/serviceAccountNames';
 import {
   CONTAINERIZATION_MCP_VERSION,
   DEFAULT_IMAGE_TAG,
@@ -60,6 +61,29 @@ jobs:
  * Generates workflow instructions for injecting user-defined environment
  * variables from GitHub secrets into Kubernetes.
  */
+const generateWorkloadIdentityWorkflowInstructions = (config: PipelineConfig): string => {
+  const cc = config.containerConfig;
+  if (!cc?.enableWorkloadIdentity || !cc.workloadIdentityClientId) return '';
+
+  const saName = cc.workloadIdentityServiceAccount || getServiceAccountName(config.appName);
+
+  return `
+- Before applying manifests, create a Kubernetes ServiceAccount for workload identity:
+  \`\`\`bash
+  kubectl apply -f - <<EOF
+  apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: ${saName}
+    namespace: \${{ inputs.namespace }}
+    annotations:
+      azure.workload.identity/client-id: "${cc.workloadIdentityClientId}"
+  EOF
+  \`\`\`
+- In the Deployment manifest, set \`spec.template.metadata.labels["azure.workload.identity/use"]: "true"\` and \`spec.template.spec.serviceAccountName: ${saName}\`
+`;
+};
+
 const generateEnvVarWorkflowInstructions = (config: PipelineConfig): string => {
   const envVars = getActiveEnvVars(config);
   if (envVars.length === 0) return '\n';
@@ -141,6 +165,12 @@ export const generateAgentConfig = (config: PipelineConfig): string => {
     if (cc.enablePodAntiAffinity) optionalLines.push(`- Pod Anti-Affinity: enabled`);
     if (cc.enableTopologySpreadConstraints)
       optionalLines.push(`- Topology Spread Constraints: enabled`);
+    if (cc.enableWorkloadIdentity && cc.workloadIdentityClientId) {
+      const saName = cc.workloadIdentityServiceAccount || getServiceAccountName(config.appName);
+      optionalLines.push(
+        `- Workload Identity: enabled (service account: ${saName}, client ID: ${cc.workloadIdentityClientId})`
+      );
+    }
   }
 
   const optionalSection = optionalLines.length > 0 ? '\n' + optionalLines.join('\n') : '';
@@ -245,7 +275,11 @@ All generated deployment files must be placed under \`/deploy/\`:
 - Resource Group: ${config.resourceGroup}
 - Namespace: ${config.namespace}
 - Service Type: ${config.serviceType}
-- Azure credentials are stored as GitHub repository secrets: \`AZURE_CLIENT_ID\`, \`AZURE_TENANT_ID\`, \`AZURE_SUBSCRIPTION_ID\`${optionalSection}
+- Azure credentials are stored as GitHub repository secrets: \`AZURE_CLIENT_ID\`, \`AZURE_TENANT_ID\`, \`AZURE_SUBSCRIPTION_ID\`${
+    config.acrLoginServer
+      ? `\n- Container Registry: \`${config.acrLoginServer}\` (ACR name stored as secret \`AZURE_ACR_NAME\`)`
+      : ''
+  }${optionalSection}
 
 ## Deployment Annotations (mandatory)
 All generated Deployment manifests MUST include these annotations in \`metadata.annotations\`:
@@ -272,7 +306,11 @@ Generate \`.github/workflows/${PIPELINE_WORKFLOW_FILENAME}\` with the following:
 - Use \`azure/login@v2\` with OIDC (\`secrets.AZURE_CLIENT_ID\`, \`secrets.AZURE_TENANT_ID\`, \`secrets.AZURE_SUBSCRIPTION_ID\`)
 - Use \`azure/aks-set-context@v4\` with cluster \`\${{ inputs.cluster-name }}\` and resource group \`\${{ inputs.resource-group }}\`
 - Install kubelogin (required for AAD-enabled AKS clusters): \`azure/use-kubelogin@v1\` with \`skip-cache: true\`
-- Convert kubeconfig to use kubelogin: \`kubelogin convert-kubeconfig -l workloadidentity\`${generateEnvVarWorkflowInstructions(
+- Convert kubeconfig to use kubelogin: \`kubelogin convert-kubeconfig -l workloadidentity\`${
+    config.acrLoginServer
+      ? `\n- Build and push the container image using ACR Tasks: \`az acr build --registry \${{ secrets.AZURE_ACR_NAME }} --image ${config.appName}:\${{ github.sha }} .\`\n- Update the container image reference in manifests to use \`${config.acrLoginServer}/${config.appName}:\${{ github.sha }}\``
+      : ''
+  }${generateEnvVarWorkflowInstructions(config)}${generateWorkloadIdentityWorkflowInstructions(
     config
   )}- Run: \`kubectl apply -f deploy/kubernetes/ -n \${{ inputs.namespace }}\`
 - After applying manifests, annotate each Deployment with the run URL and workflow name:

@@ -349,8 +349,8 @@ describe('pipelineOrchestration', () => {
 
       const cc = createContainerConfig({
         envVars: [
-          { key: 'NODE_ENV', value: 'production' },
-          { key: 'API_KEY', value: 'secret-key' },
+          { key: 'NODE_ENV', value: 'production', isSecret: false },
+          { key: 'API_KEY', value: 'secret-key', isSecret: false },
         ],
       });
       const config: PipelineConfig = { ...validConfig, containerConfig: cc };
@@ -367,9 +367,9 @@ describe('pipelineOrchestration', () => {
 
       const cc = createContainerConfig({
         envVars: [
-          { key: '', value: 'should-be-skipped' },
-          { key: '   ', value: 'also-skipped' },
-          { key: 'VALID', value: 'included' },
+          { key: '', value: 'should-be-skipped', isSecret: false },
+          { key: '   ', value: 'also-skipped', isSecret: false },
+          { key: 'VALID', value: 'included', isSecret: false },
         ],
       });
       const config: PipelineConfig = { ...validConfig, containerConfig: cc };
@@ -385,6 +385,63 @@ describe('pipelineOrchestration', () => {
       mockSetRepoSecrets.mockRejectedValue(new Error('API failure'));
 
       await expect(createPipelineSecrets(mockOctokit, validConfig)).rejects.toThrow('API failure');
+    });
+
+    describe('ACR name derivation', () => {
+      it('should derive AZURE_ACR_NAME from acrLoginServer', async () => {
+        mockSetRepoSecrets.mockResolvedValue(undefined);
+
+        const config: PipelineConfig = { ...validConfig, acrLoginServer: 'myregistry.azurecr.io' };
+        await createPipelineSecrets(mockOctokit, config);
+
+        const secrets = mockSetRepoSecrets.mock.calls[0][3] as Record<string, string>;
+        expect(secrets.AZURE_ACR_NAME).toBe('myregistry');
+      });
+
+      it('should derive AZURE_ACR_NAME from acrResourceId', async () => {
+        mockSetRepoSecrets.mockResolvedValue(undefined);
+
+        const config: PipelineConfig = {
+          ...validConfig,
+          acrResourceId:
+            '/subscriptions/sub-123/resourceGroups/my-rg/providers/Microsoft.ContainerRegistry/registries/myacr',
+        };
+        await createPipelineSecrets(mockOctokit, config);
+
+        const secrets = mockSetRepoSecrets.mock.calls[0][3] as Record<string, string>;
+        expect(secrets.AZURE_ACR_NAME).toBe('myacr');
+      });
+
+      it('should throw when acrLoginServer produces empty first segment', async () => {
+        const config: PipelineConfig = { ...validConfig, acrLoginServer: '.azurecr.io' };
+
+        await expect(createPipelineSecrets(mockOctokit, config)).rejects.toThrow(
+          'Could not derive ACR name from login server'
+        );
+        expect(mockSetRepoSecrets).not.toHaveBeenCalled();
+      });
+
+      it('should throw when acrResourceId has no registries segment', async () => {
+        const config: PipelineConfig = {
+          ...validConfig,
+          acrResourceId:
+            '/subscriptions/sub-123/resourceGroups/my-rg/providers/Microsoft.ContainerRegistry',
+        };
+
+        await expect(createPipelineSecrets(mockOctokit, config)).rejects.toThrow(
+          'Could not derive ACR name from resource ID'
+        );
+        expect(mockSetRepoSecrets).not.toHaveBeenCalled();
+      });
+
+      it('should not set AZURE_ACR_NAME when neither ACR field is provided', async () => {
+        mockSetRepoSecrets.mockResolvedValue(undefined);
+
+        await createPipelineSecrets(mockOctokit, validConfig);
+
+        const secrets = mockSetRepoSecrets.mock.calls[0][3] as Record<string, string>;
+        expect(Object.keys(secrets)).not.toContain('AZURE_ACR_NAME');
+      });
     });
   });
 });

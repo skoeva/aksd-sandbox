@@ -143,6 +143,33 @@ export const createPipelineSecrets = async (
     AZURE_SUBSCRIPTION_ID: config.subscriptionId,
   };
 
+  if (config.acrLoginServer) {
+    // Prefer deriving from login server (e.g., "myregistry.azurecr.io" → "myregistry")
+    const acrName = config.acrLoginServer.split('.')[0];
+    if (acrName) {
+      secrets.AZURE_ACR_NAME = acrName;
+    } else {
+      throw new Error(
+        `Could not derive ACR name from login server: "${config.acrLoginServer}". Expected format: <name>.azurecr.io`
+      );
+    }
+  } else if (config.acrResourceId) {
+    // Parse ACR name from resource ID by locating the segment after "registries"
+    const segments = config.acrResourceId.split('/');
+    const registriesIdx = segments.findIndex(s => s.toLowerCase() === 'registries');
+    if (
+      registriesIdx !== -1 &&
+      registriesIdx + 1 < segments.length &&
+      segments[registriesIdx + 1]
+    ) {
+      secrets.AZURE_ACR_NAME = segments[registriesIdx + 1];
+    } else {
+      throw new Error(
+        `Could not derive ACR name from resource ID: "${config.acrResourceId}". Expected "/registries/<name>" segment.`
+      );
+    }
+  }
+
   const envVars = getActiveEnvVars(config);
   for (const { key, value } of envVars) {
     secrets[toEnvSecretName(key)] = value;

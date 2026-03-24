@@ -112,8 +112,8 @@ describe('agentTemplates', () => {
         useCustomServicePort: true,
         enableStartupProbe: false,
         envVars: [
-          { key: 'NODE_ENV', value: 'production' },
-          { key: '', value: '' },
+          { key: 'NODE_ENV', value: 'production', isSecret: false },
+          { key: '', value: '', isSecret: false },
         ],
       });
       const config: PipelineConfig = { ...validConfig, containerConfig: cc };
