@@ -8,9 +8,9 @@
 
 ## Alpha Preview features
 For all these new features, please provide feedback in the GitHub issues, we want to learn from you and improve! As these are preview features only run on test clusters.
-1. AI Assistant with Natural Language Support - in context troubleshooting through asking with natural language!
-2. Insights - identify what DNS has done now, identify top resources consumers, find networking issues with network traces, all back with a powerful UI!
-3. Automating app deployment from AKS desktop with a GitHub Actions Pipeline - just a simple click through and edit what you need to!
+1. **AI Assistant with Natural Language Support** - in context troubleshooting through asking with natural language!
+2. **Insights** - identify what DNS has done now, identify top resources consumers, find networking issues with network traces, all back with a powerful UI!
+3. **Automating app deployment** from AKS desktop with a GitHub Actions Pipeline - just a simple click through and edit what you need to!
 
 
 ## AI Assistant with Natural Language Support (Preview)
