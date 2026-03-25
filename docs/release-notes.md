@@ -40,33 +40,35 @@ There are two options for enabling this functionality:
 2. Utilize an existing model - AKS desktop will act as an Agent itself, providing context to your model.
 
 ### Enabling the feature
-1. Utilize the Azure AKS Agentic CLI Agent 
-    * Go to AKS desktop settings > Plugins > Enable AI Assistant
-    * [Install the Agentic CLI Agent ](https://learn.microsoft.com/en-us/azure/aks/agentic-cli-for-aks-install?tabs=client-mode%2Cclient-cleanup) on your cluster and configure it to connect to a model.
-    * Ensure the cluster running the Agentic CLI Agent is a registered cluster in AKS desktop, i.e you see it in your cluster list.
+1. Enable the AI Assistant plugin in AKS Desktop
+    * Go to **Settings > Plugins**.
+    * Make sure the **AI Assistant** plugin is enabled.
+    * Click on **AI Assistant** in the list of plugins.
+    * Toggle **Preview** to the enabled state. After this, the AI Assistant icon should appear in the top right.
 
-2. Enable in AKS desktop
-    * Go to AKS desktop settings > Plugins > Enable AI Assistant
+2. Configure a provider
+    * Go to **Settings > Plugins > AI Assistant > Add provider**.
     ![alt text](image-12.png)
-    * Go to AKS desktop settings > Plugins > Enable AI Assistant > Add provider
     ![alt text](image-13.png)
 
-3. Review AI tool Kubernetes Requests setting
+3. Choose how the AI Assistant is backed
+
+    **Option A: Use the Azure AKS Agentic CLI Agent (recommended for AKS)**
+    * [Install the Agentic CLI Agent](https://learn.microsoft.com/en-us/azure/aks/agentic-cli-for-aks-install?tabs=client-mode%2Cclient-cleanup) on your cluster and configure it to connect to a model.
+    * Ensure the cluster running the Agentic CLI Agent is a registered cluster in AKS Desktop (you should see it in your cluster list).
+
+    **Option B: Use an existing model**
+    * Configure the provider so that AKS Desktop can act as an agent and send cluster context to your existing model.
+
+4. Review AI tool Kubernetes Requests setting
 ![alt text](image-14.png)
 
 ### Using AI Azure AKS Agentic CLI Agent
-1. Open the AI Assistant
-2. Select Agent
-3. Select cluster where the agent is running.
+1. Open the AI Assistant.
+2. Select **Agent**.
+3. Select the cluster where the Agentic CLI Agent is running (for example, "<agent-cluster-name>").
 4. Start chatting!
 ![alt text](image-8.png)
-
-image-8.png
-
-### Enabling the feature
-Go to Settings > Plugins ->  make sure ai-assistant plugin is enabled -> click on ai-assistant in the list of plugins -> toggle preview to enabled state. After this the ai-assistant icon should appear in the top right.
-
-Select the cluster where the Agentic CLI Agent is running (for example, "<agent-cluster-name>") once you’ve opened the AI assistant.
 ![alt text](image-7.png)
 
 ### Try it out!
