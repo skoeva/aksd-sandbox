@@ -137,6 +137,7 @@ describe('useWorkloadIdentitySetup', () => {
       resourceGroupName: 'rg-my-project',
       location: 'eastus',
       subscriptionId: baseConfig.subscriptionId,
+      tags: ['purpose=GitHub Actions Identity', 'createdBy=AKS Desktop'],
     });
     expect(result.current.status).toBe('done');
   });
