@@ -49,6 +49,7 @@ export default function DeployWizard(props: DeployWizardProps) {
       userPreviewYaml,
       deployResult,
       deployMessage,
+      quotaWarnings,
     } = wizardState;
 
     switch (activeStep) {
@@ -85,6 +86,7 @@ export default function DeployWizard(props: DeployWizardProps) {
             containerPreviewYaml={containerConfig.config.containerPreviewYaml}
             deployResult={deployResult}
             deployMessage={deployMessage}
+            quotaWarnings={quotaWarnings}
           />
         );
       default:

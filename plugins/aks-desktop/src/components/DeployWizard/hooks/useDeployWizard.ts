@@ -7,6 +7,7 @@ import React, { useEffect, useState } from 'react';
 import YAML from 'yaml';
 import { dryRunApply } from '../utils/dryRunApply';
 import { applyNamespaceOverride } from '../utils/namespaceOverride';
+import { checkResourceQuota, type QuotaWarning } from '../utils/quotaCheck';
 import { type ContainerDeploymentConfig, generateYamlForContainer } from '../utils/yamlGenerator';
 import type { ContainerConfig } from './useContainerConfiguration';
 import { useContainerConfiguration } from './useContainerConfiguration';
@@ -21,6 +22,50 @@ function parseAndOverride(yaml: string, namespace?: string) {
     .map(d => d.toJSON())
     .filter(Boolean)
     .map(obj => applyNamespaceOverride(obj, namespace));
+}
+
+/**
+ * Expands Kubernetes List resources (e.g. DeploymentList) into individual items,
+ * inheriting apiVersion and namespace from the parent when not set on the item.
+ */
+function flattenListResources(docs: any[]): any[] {
+  return docs.flatMap(resource => {
+    if (
+      (resource.kind === 'List' || resource.kind?.endsWith('List')) &&
+      Array.isArray(resource.items)
+    ) {
+      return resource.items.map((item: any) => ({
+        ...item,
+        apiVersion: item.apiVersion || resource.apiVersion,
+        metadata: {
+          ...item.metadata,
+          namespace: item.metadata?.namespace || resource.metadata?.namespace,
+        },
+      }));
+    }
+    return resource;
+  });
+}
+
+/** Returns the raw YAML text for the current source type. */
+function getDeployText(
+  sourceType: 'yaml' | 'container' | null,
+  config: ContainerConfig,
+  namespace?: string,
+  yamlEditorValue?: string
+): string {
+  return sourceType === 'container'
+    ? generateYamlForContainer(toYamlConfig(config, namespace))
+    : yamlEditorValue ?? '';
+}
+
+/** Parses YAML text into docs, applying namespace override for YAML-source only. */
+function parseDeployDocs(
+  sourceType: 'yaml' | 'container' | null,
+  text: string,
+  namespace?: string
+): any[] {
+  return sourceType === 'yaml' ? parseAndOverride(text, namespace) : parseAndOverride(text);
 }
 
 /** Strips UI-only fields from a full ContainerConfig, returning only YAML-generation fields. */
@@ -84,6 +129,8 @@ export interface UseDeployWizardResult {
   deployResult: 'success' | 'error' | null;
   /** Human-readable message describing the deploy outcome. */
   deployMessage: string;
+  /** Advisory warnings when deployment resources would exceed namespace quota. */
+  quotaWarnings: QuotaWarning[];
   /** Namespace-overridden YAML shown in the review step for the YAML source path. */
   userPreviewYaml: string;
   /** Full container-configuration state and setter (see `useContainerConfiguration`). */
@@ -138,6 +185,7 @@ export function useDeployWizard({
   const [deploying, setDeploying] = useState(false);
   const [deployResult, setDeployResult] = useState<null | 'success' | 'error'>(null);
   const [deployMessage, setDeployMessage] = useState<string>('');
+  const [quotaWarnings, setQuotaWarnings] = useState<QuotaWarning[]>([]);
   const [userPreviewYaml, setUserPreviewYaml] = useState<string>('');
 
   const containerConfig = useContainerConfiguration(initialApplicationName, initialContainerConfig);
@@ -145,7 +193,7 @@ export function useDeployWizard({
   useEffect(() => {
     // Generate YAML preview for the review step
     if (activeStep === WizardStep.DEPLOY && sourceType === 'container') {
-      const newYaml = generateYamlForContainer(toYamlConfig(containerConfig.config, namespace));
+      const newYaml = getDeployText(sourceType, containerConfig.config, namespace);
       if (newYaml !== containerConfig.config.containerPreviewYaml) {
         containerConfig.setConfig(prev => ({
           ...prev,
@@ -170,9 +218,46 @@ export function useDeployWizard({
       setDeployResult(null);
       setDeployMessage('');
       setDeploying(false);
+      setQuotaWarnings(prev => (prev.length === 0 ? prev : []));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeStep, sourceType, namespace, yamlEditorValue, containerConfig.config]);
+
+  // Advisory quota check: runs when entering the Deploy review step.
+  // Uses containerPreviewYaml (a primitive string, set by the effect above)
+  // instead of containerConfig.config to avoid a duplicate API call caused by
+  // the object reference changing when setConfig updates containerPreviewYaml.
+  const containerPreviewYaml = containerConfig.config.containerPreviewYaml;
+  useEffect(() => {
+    if (activeStep !== WizardStep.DEPLOY || !namespace) {
+      return;
+    }
+
+    const text = sourceType === 'container' ? containerPreviewYaml ?? '' : yamlEditorValue ?? '';
+
+    if (!text) return;
+
+    setQuotaWarnings(prev => (prev.length === 0 ? prev : []));
+
+    let flatDocs: any[];
+    try {
+      const docs = parseDeployDocs(sourceType, text, namespace);
+      flatDocs = flattenListResources(docs);
+    } catch {
+      return;
+    }
+
+    let cancelled = false;
+    checkResourceQuota(flatDocs, namespace, cluster)
+      .then(warnings => {
+        if (!cancelled) setQuotaWarnings(warnings);
+      })
+      .catch(() => {
+        if (!cancelled) setQuotaWarnings(prev => (prev.length === 0 ? prev : []));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeStep, namespace, cluster, sourceType, yamlEditorValue, containerPreviewYaml]);
 
   const isStepValid = (step: WizardStep): boolean => {
     switch (step) {
@@ -216,15 +301,11 @@ export function useDeployWizard({
 
       // Generate container YAML synchronously to avoid a race where
       // containerPreviewYaml may still be empty on the first render of the Deploy step.
-      const text =
-        sourceType === 'container'
-          ? generateYamlForContainer(toYamlConfig(containerConfig.config, namespace))
-          : yamlEditorValue;
+      const text = getDeployText(sourceType, containerConfig.config, namespace, yamlEditorValue);
 
       let docs;
       try {
-        // Container YAML already has namespace set by generateYamlForContainer.
-        docs = sourceType === 'yaml' ? parseAndOverride(text, namespace) : parseAndOverride(text);
+        docs = parseDeployDocs(sourceType, text, namespace);
         for (const doc of docs) {
           if (!doc || !doc.kind) {
             throw new Error(t('Invalid YAML: missing required field (kind)'));
@@ -257,22 +338,7 @@ export function useDeployWizard({
 
       // Expand List resources (e.g., DeploymentList) into individual items
       // so both dry-run and apply operate on each resource independently.
-      const flatDocs = docs.flatMap(resource => {
-        if (
-          resource.kind === 'List' ||
-          (resource.kind.endsWith('List') && resource.items !== undefined)
-        ) {
-          return resource.items.map((item: any) => ({
-            ...item,
-            apiVersion: item.apiVersion || resource.apiVersion,
-            metadata: {
-              ...item.metadata,
-              namespace: item.metadata?.namespace || resource.metadata?.namespace,
-            },
-          }));
-        }
-        return resource;
-      });
+      const flatDocs = flattenListResources(docs);
 
       // Phase 1: Server-side dry-run validation (catches admission webhook errors).
       // Runs in parallel — unlike the sequential Phase 2 apply — because dry-runs
@@ -352,6 +418,7 @@ export function useDeployWizard({
     deploying,
     deployResult,
     deployMessage,
+    quotaWarnings,
     userPreviewYaml,
     containerConfig,
     handleNext,

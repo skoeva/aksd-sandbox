@@ -231,3 +231,43 @@ describe('DeployPure — container sourceType', () => {
     expect(screen.getByText(/namespace: production/i)).toBeInTheDocument();
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe('DeployPure — quota warnings', () => {
+  const quotaWarnings = [
+    {
+      resource: 'requests.memory' as const,
+      requested: '384Mi',
+      remaining: '256Mi',
+      limit: '512Mi',
+    },
+    {
+      resource: 'limits.cpu' as const,
+      requested: '3',
+      remaining: '1',
+      limit: '2',
+    },
+  ];
+
+  it('renders quota warning banner when quotaWarnings is non-empty and deployResult is null', () => {
+    renderStory(Idle.args!, { quotaWarnings });
+    expect(screen.getByText(/resource quota warning/i)).toBeInTheDocument();
+    expect(screen.getByText(/requests\.memory/)).toBeInTheDocument();
+    expect(screen.getByText(/384Mi/)).toBeInTheDocument();
+    expect(screen.getByText(/limits\.cpu/)).toBeInTheDocument();
+  });
+
+  it('hides quota warning banner when deployResult is set', () => {
+    renderStory(Idle.args!, {
+      quotaWarnings,
+      deployResult: 'success',
+      deployMessage: 'Applied 1 resource(s) successfully.',
+    });
+    expect(screen.queryByText(/resource quota warning/i)).not.toBeInTheDocument();
+  });
+
+  it('does not render quota warning banner when quotaWarnings is empty', () => {
+    renderStory(Idle.args!, { quotaWarnings: [] });
+    expect(screen.queryByText(/resource quota warning/i)).not.toBeInTheDocument();
+  });
+});

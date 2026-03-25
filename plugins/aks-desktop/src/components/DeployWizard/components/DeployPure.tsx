@@ -4,8 +4,10 @@
 import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import MonacoEditor from '@monaco-editor/react';
 import { Box, Chip, Paper, Stack, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import React from 'react';
 import { K8sObject } from '../hooks/useYamlObjects';
+import type { QuotaWarning } from '../utils/quotaCheck';
 
 /**
  * Pure presentational props for {@link DeployPure}.
@@ -28,6 +30,8 @@ export interface DeployPureProps {
   deployMessage: string;
   /** Parsed Kubernetes resource summaries shown as review cards (YAML source path). */
   yamlObjects: K8sObject[];
+  /** Advisory warnings when deployment resources would exceed namespace quota. */
+  quotaWarnings?: QuotaWarning[];
 }
 
 let tabFocusToggleCounter = 0;
@@ -49,6 +53,7 @@ export default function DeployPure({
   deployResult,
   deployMessage,
   yamlObjects,
+  quotaWarnings = [],
 }: DeployPureProps) {
   const { t } = useTranslation();
 
@@ -65,6 +70,43 @@ export default function DeployPure({
       <Typography variant="h6" gutterBottom>
         {t('Review & Deploy')}
       </Typography>
+      {quotaWarnings.length > 0 && !deployResult && (
+        <Box
+          role="status"
+          sx={{
+            mb: 1,
+            p: 1.5,
+            border: '1px solid',
+            borderColor: 'warning.main',
+            borderRadius: 1,
+            color: 'text.primary',
+            backgroundColor: theme =>
+              alpha(theme.palette.warning.main, theme.palette.mode === 'dark' ? 0.12 : 0.08),
+          }}
+        >
+          <Typography variant="body2" component="div" sx={{ fontWeight: 600, mb: 0.5 }}>
+            {t('Resource quota warning')}
+          </Typography>
+          {quotaWarnings.map(w => (
+            <Typography
+              key={w.resource}
+              variant="body2"
+              component="div"
+              sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: 'inherit' }}
+            >
+              {t(
+                '{{resource}}: requesting {{requested}} but only {{remaining}} remains (limit: {{limit}})',
+                {
+                  resource: w.resource,
+                  requested: w.requested,
+                  remaining: w.remaining,
+                  limit: w.limit,
+                }
+              )}
+            </Typography>
+          ))}
+        </Box>
+      )}
       {deployResult && (
         /* role="alert" (for errors) causes AT to immediately announce the message as an
            assertive live region — appropriate for a failed deploy that needs urgent attention.

@@ -3,6 +3,7 @@
 
 import React from 'react';
 import { useYamlObjects } from '../hooks/useYamlObjects';
+import type { QuotaWarning } from '../utils/quotaCheck';
 import DeployPure from './DeployPure';
 
 /**
@@ -28,6 +29,8 @@ export interface DeployProps {
   deployResult: 'success' | 'error' | null;
   /** Human-readable message describing the deploy outcome. */
   deployMessage: string;
+  /** Advisory warnings when deployment resources would exceed namespace quota. */
+  quotaWarnings: QuotaWarning[];
 }
 
 /**
@@ -45,6 +48,7 @@ export default function Deploy({
   yamlEditorValue,
   deployResult,
   deployMessage,
+  quotaWarnings,
 }: DeployProps) {
   const yamlObjects = useYamlObjects(sourceType, userPreviewYaml, yamlEditorValue);
   return (
@@ -55,6 +59,7 @@ export default function Deploy({
       deployResult={deployResult}
       deployMessage={deployMessage}
       yamlObjects={yamlObjects}
+      quotaWarnings={quotaWarnings}
     />
   );
 }
