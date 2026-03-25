@@ -211,6 +211,7 @@ Note it takes a few seconds for the screen to read 'projects' as we need to enum
 
 ## Sign In
 To add existing Azure clusters you will need to sign in, this flow supports multi-factor authentication.
+
 ![alt text](image-1.png)
 
 ## Adding a cluster updates
