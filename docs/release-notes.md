@@ -14,7 +14,7 @@ For all these new features, please provide feedback in the GitHub issues, we wan
 
 
 ## AI Assistant with Natural Language Support (Preview)
-AKS Desktop Troubleshooting Assistant that brings together real-time cluster context, scoped analysis, and AI-generated recommendations to help users understand not just what happened, but why, and what to do next. 
+The AKS Desktop Troubleshooting Assistant brings together real-time cluster context, scoped analysis, and AI-generated recommendations to help users understand not just what happened, but why, and what to do next. 
 
 ### Addressing Key Challenges
 Troubleshooting Kubernetes workloads is often complex and time consuming, it typically relies on a mix of CLI commands, dashboards, and documentation to piece together what went wrong. Common issues like DNS failures, pod crashes, and upgrade blockers can be difficult to diagnose, especially when the root cause is buried across logs, events, and configurations.
