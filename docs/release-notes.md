@@ -202,7 +202,7 @@ kubectl delete ns gadget
 Configure a GitHub-based CI/CD pipeline for your AKS project using AKS Desktop. The pipeline uses GitHub Copilot Coding Agent to analyze your repository to provide you with a Dockerfile, K8s manifests (if required) based on your app, containerize your application, and deploy it to Azure Kubernetes Service — all from within AKS Desktop.
 
 
-This [article](deployment-pipeline-create.md) walks you through the end to end. We are working supporting additional pipelines too, stay tuned and let us know any requests you have throuugh GitHub issues on the repo.
+This [article](deployment-pipeline-create.md) walks you through the end to end. We are working supporting additional pipelines too, stay tuned and let us know any requests you have through GitHub issues on the repo.
 
 
 
