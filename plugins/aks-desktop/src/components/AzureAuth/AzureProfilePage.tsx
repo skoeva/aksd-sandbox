@@ -16,6 +16,7 @@ import { useTheme } from '@mui/material/styles';
 import React, { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useAzureAuth } from '../../hooks/useAzureAuth';
+import { PROFILE_REDIRECT_DELAY_MS } from '../../utils/constants/timing';
 
 export default function AzureProfilePage() {
   const history = useHistory();
@@ -51,7 +52,7 @@ export default function AzureProfilePage() {
       // Redirect to login page after logout
       setTimeout(() => {
         history.push('/azure/login');
-      }, 500);
+      }, PROFILE_REDIRECT_DELAY_MS);
     } catch (error) {
       console.error('Error logging out:', error);
       setLoggingOut(false);

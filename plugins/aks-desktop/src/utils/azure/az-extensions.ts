@@ -3,7 +3,7 @@
 
 import { debugLog, getErrorMessage, isAzError, needsRelogin, runCommandAsync } from './az-cli-core';
 
-async function isExtensionInstalled(
+export async function isExtensionInstalled(
   extensionName: string
 ): Promise<{ installed: boolean; error?: string }> {
   try {
@@ -46,7 +46,7 @@ async function isExtensionInstalled(
   }
 }
 
-async function installExtension(
+export async function installExtension(
   extensionName: string,
   options?: { allowPreview?: boolean }
 ): Promise<{ success: boolean; stdout: string; stderr: string; error?: string }> {
@@ -84,22 +84,6 @@ async function installExtension(
       error: `Failed to install ${extensionName} extension: ${errorMessage}`,
     };
   }
-}
-
-export function isAksPreviewExtensionInstalled() {
-  return isExtensionInstalled('aks-preview');
-}
-
-export function installAksPreviewExtension() {
-  return installExtension('aks-preview');
-}
-
-export function isAlertsManagementExtensionInstalled() {
-  return isExtensionInstalled('alertsmanagement');
-}
-
-export function installAlertsManagementExtension() {
-  return installExtension('alertsmanagement', { allowPreview: true });
 }
 
 export async function configureAzureCliExtensions(): Promise<{

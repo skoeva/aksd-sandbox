@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the Apache 2.0.
+import { LOGIN_POLL_INTERVAL_MS, LOGIN_TIMEOUT_MS } from '../constants/timing';
 import {
   debugLog,
   getErrorMessage,
@@ -131,7 +132,7 @@ export async function initiateLogin(): Promise<{ success: boolean; message: stri
 
 export function monitorLoginStatus(
   onStatusChange: (status: { isLoggedIn: boolean; message: string }) => void,
-  intervalMs = 5000
+  intervalMs = LOGIN_POLL_INTERVAL_MS
 ): () => void {
   let isPolling = true;
   let pollCount = 0;
@@ -173,7 +174,7 @@ export function monitorLoginStatus(
   };
 }
 
-export async function login(timeoutMs = 300000): Promise<boolean> {
+export async function login(timeoutMs = LOGIN_TIMEOUT_MS): Promise<boolean> {
   if (await isAzCliLoggedIn()) return true;
   const init = await initiateLogin();
   if (!init.success) return false;
@@ -183,7 +184,7 @@ export async function login(timeoutMs = 300000): Promise<boolean> {
     const poll = async () => {
       if (await isAzCliLoggedIn()) return resolve(true);
       if (Date.now() - start > timeoutMs) return resolve(false);
-      setTimeout(poll, 5000);
+      setTimeout(poll, LOGIN_POLL_INTERVAL_MS);
     };
     poll();
   });

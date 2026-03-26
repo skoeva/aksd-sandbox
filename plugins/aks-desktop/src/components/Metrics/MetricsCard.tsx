@@ -8,6 +8,11 @@ import { Box, Typography, useTheme } from '@mui/material';
 import React, { useCallback, useEffect, useState } from 'react';
 import { getClusterResourceIdAndGroup } from '../../utils/azure/az-clusters';
 import { RESOURCE_GROUP_LABEL, SUBSCRIPTION_LABEL } from '../../utils/constants/projectLabels';
+import {
+  METRICS_REFRESH_INTERVAL_MS,
+  PROMETHEUS_QUERY_RANGE_SECONDS,
+  PROMETHEUS_STEP_SECONDS,
+} from '../../utils/constants/timing';
 import { getPrometheusEndpoint } from '../MetricsTab/getPrometheusEndpoint';
 import { queryPrometheus } from '../MetricsTab/queryPrometheus';
 import { DeploymentSelector } from '../shared/DeploymentSelector';
@@ -146,8 +151,8 @@ function MetricsCard({ project }: MetricsCardProps) {
       const promEndpoint = await getPrometheusEndpoint(resourceGroup, cluster, subscription);
 
       const end = Math.floor(Date.now() / 1000);
-      const start = end - 300; // Last 5 minutes
-      const step = 60;
+      const start = end - PROMETHEUS_QUERY_RANGE_SECONDS;
+      const step = PROMETHEUS_STEP_SECONDS;
 
       // Query CPU usage
       const cpuQuery = `sum by (namespace) (rate(container_cpu_usage_seconds_total{namespace="${namespace}", container!=""}[5m]))`;
@@ -265,8 +270,7 @@ function MetricsCard({ project }: MetricsCardProps) {
   useEffect(() => {
     fetchMetrics();
 
-    // Refresh metrics every 30 seconds
-    const interval = setInterval(fetchMetrics, 30000);
+    const interval = setInterval(fetchMetrics, METRICS_REFRESH_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [selectedDeployment, subscription, fetchMetrics]);
 

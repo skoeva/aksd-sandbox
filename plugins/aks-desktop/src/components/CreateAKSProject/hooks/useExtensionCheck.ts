@@ -3,8 +3,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import {
-  installAksPreviewExtension,
-  isAksPreviewExtensionInstalled,
+  installExtension as installAzExtension,
+  isExtensionInstalled,
 } from '../../../utils/azure/az-extensions';
 import type { ExtensionStatus } from '../types';
 
@@ -21,7 +21,7 @@ export const useExtensionCheck = () => {
 
   const checkExtension = useCallback(async () => {
     try {
-      const result = await isAksPreviewExtensionInstalled();
+      const result = await isExtensionInstalled('aks-preview');
       setStatus(prev => ({
         ...prev,
         installed: result.installed,
@@ -40,7 +40,7 @@ export const useExtensionCheck = () => {
   const installExtension = useCallback(async () => {
     try {
       setStatus(prev => ({ ...prev, installing: true, error: null }));
-      const result = await installAksPreviewExtension();
+      const result = await installAzExtension('aks-preview');
 
       if (result.success) {
         setStatus(prev => ({

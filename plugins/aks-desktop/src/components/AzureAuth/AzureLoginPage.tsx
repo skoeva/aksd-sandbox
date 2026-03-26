@@ -15,6 +15,11 @@ import {
 import React, { useEffect, useState } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import { getLoginStatus, initiateLogin } from '../../utils/azure/az-auth';
+import {
+  LOGIN_POLL_INTERVAL_MS,
+  LOGIN_REDIRECT_DELAY_MS,
+  LOGIN_TIMEOUT_MS,
+} from '../../utils/constants/timing';
 
 interface AzureLoginPageProps {
   redirectTo?: string;
@@ -86,7 +91,7 @@ export default function AzureLoginPage({ redirectTo }: AzureLoginPageProps) {
 
       // Start polling for login completion
       let pollCount = 0;
-      const maxPolls = 60; // 5 minutes max (60 * 5 seconds)
+      const maxPolls = Math.ceil(LOGIN_TIMEOUT_MS / LOGIN_POLL_INTERVAL_MS);
 
       const interval = setInterval(async () => {
         pollCount++;
@@ -105,13 +110,13 @@ export default function AzureLoginPage({ redirectTo }: AzureLoginPageProps) {
             setTimeout(() => {
               const target = getRedirectTarget();
               history.push(target);
-            }, 1000);
+            }, LOGIN_REDIRECT_DELAY_MS);
           } else if (pollCount >= maxPolls) {
             clearInterval(interval);
             setErrorMessage(t('Login timeout. Please try again.'));
             setLoading(false);
           } else {
-            const remaining = ((maxPolls - pollCount) * 5) / 60;
+            const remaining = ((maxPolls - pollCount) * LOGIN_POLL_INTERVAL_MS) / 60_000;
             setStatusMessage(
               t('Waiting for login completion... ({{minutes}} minutes remaining)', {
                 minutes: remaining.toFixed(1),
@@ -121,7 +126,7 @@ export default function AzureLoginPage({ redirectTo }: AzureLoginPageProps) {
         } catch (error) {
           console.error('Error polling login status:', error);
         }
-      }, 5000); // Poll every 5 seconds
+      }, LOGIN_POLL_INTERVAL_MS);
 
       setPollingInterval(interval);
     } catch (error) {

@@ -43,6 +43,7 @@ import ScalingCard from './components/Scaling/ScalingCard';
 import ScalingTab from './components/Scaling/ScalingTab';
 import type { ProjectDefinition } from './types/project';
 import { getLoginStatus } from './utils/azure/az-auth';
+import { AZURE_ACCOUNT_POLL_INTERVAL_MS } from './utils/constants/timing';
 import { isAksProject } from './utils/shared/isAksProject';
 import { azureTheme } from './utils/shared/theme';
 
@@ -177,7 +178,7 @@ if (Headlamp.isRunningAsApp()) {
   });
 
   // Fallback: Check periodically with a longer interval (30 seconds) as a safety net
-  setInterval(updateAzureAccountLabel, 30000); // Check every 30 seconds
+  setInterval(updateAzureAccountLabel, AZURE_ACCOUNT_POLL_INTERVAL_MS);
 
   // Register Azure authentication routes
   registerRoute({
