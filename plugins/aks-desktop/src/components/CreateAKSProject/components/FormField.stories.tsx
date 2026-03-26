@@ -3,8 +3,8 @@
 
 import { Meta, StoryFn } from '@storybook/react';
 import React from 'react';
-import type { FormFieldProps } from '../types';
-import { FormField } from './FormField';
+import { FormField } from '../../shared/FormField';
+import type { FormFieldProps } from '../../shared/types';
 
 const BASE_PROPS: FormFieldProps = {
   label: 'Project Name',

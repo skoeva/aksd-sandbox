@@ -12,8 +12,8 @@ import {
   Typography,
 } from '@mui/material';
 import React from 'react';
-import { ComputeStep } from '../CreateAKSProject/components/ComputeStep';
-import { NetworkingStep } from '../CreateAKSProject/components/NetworkingStep';
+import { ComputeStep } from '../shared/ComputeStep';
+import { NetworkingStep } from '../shared/NetworkingStep';
 import { useInfoTab } from './hooks/useInfoTab';
 
 /**

@@ -4,7 +4,7 @@
 import { InputAdornment, TextField } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import React from 'react';
-import type { FormFieldProps } from '../types';
+import type { FormFieldProps } from './types';
 
 /**
  * Reusable form field component with consistent styling
