@@ -1,6 +1,6 @@
 # Insights (Preview)
 
-The **Insights** feature brings real time observability to AKS Desktop via the insights-plugin powered by eBPF. It allows you to gain deep visibility into your AKS clusters directly from the desktop UI no kubectl required.
+The **Insights** feature brings real-time observability to AKS Desktop via the insights-plugin powered by eBPF. It allows you to gain deep visibility into your AKS clusters directly from the desktop UI—no kubectl required.
 
 > **Note:** This feature is currently in **Preview**.
 
