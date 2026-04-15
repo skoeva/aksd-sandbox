@@ -6,36 +6,38 @@ import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 // @ts-ignore todo: LogsViewer is not importing
 import { LogsViewer } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import { type KubeObject } from '@kinvolk/headlamp-plugin/lib/lib/k8s/cluster';
-import { Box, Card, MenuItem, TextField, Typography } from '@mui/material';
+import { Box, Card, Typography } from '@mui/material';
 import { visuallyHidden } from '@mui/utils';
-import React, { useEffect, useMemo, useState } from 'react';
+import React from 'react';
+import { DeploymentSelector } from '../shared/DeploymentSelector';
+import { useLogsTab } from './hooks/useLogsTab';
 
+/**
+ * Props for the {@link LogsTab} component.
+ */
 interface LogsTabProps {
+  /** All Kubernetes resources for the project; Deployments are filtered from this list. */
   projectResources: KubeObject[];
 }
 
+/**
+ * Displays live logs for a deployment in the project namespace.
+ *
+ * Shows an empty state when no deployments exist. When multiple deployments are present,
+ * renders a selector so the user can switch between them. Uses a visually-hidden live
+ * region to announce the empty state to screen readers.
+ *
+ * @param props.projectResources - All project resources; Deployments are extracted internally.
+ */
 const LogsTab = ({ projectResources }: LogsTabProps) => {
   const { t } = useTranslation();
-  const deployments = useMemo(
-    () => projectResources.filter(it => it.kind === 'Deployment'),
-    [projectResources]
-  );
-  const [deploymentId, setDeploymentId] = useState<string>('');
-  // Deferred flag: starts false so the live region mounts with empty text,
-  // then flips to true after the first paint so the text change is announced.
-  const [liveReady, setLiveReady] = useState(false);
-  useEffect(() => {
-    setLiveReady(true);
-  }, []);
-
-  if (!deploymentId && deployments.length > 0) {
-    setDeploymentId(deployments[0].jsonData.metadata.uid as string);
-  }
-
-  const selectedDeployment = useMemo(
-    () => deployments.find(it => it.jsonData.metadata.uid === deploymentId),
-    [deployments, deploymentId]
-  );
+  const {
+    deployments,
+    selectedDeployment,
+    selectedDeploymentName,
+    liveReady,
+    setSelectedDeploymentName,
+  } = useLogsTab(projectResources);
 
   return (
     <>
@@ -72,20 +74,12 @@ const LogsTab = ({ projectResources }: LogsTabProps) => {
         <>
           {deployments.length > 1 && (
             <Box sx={{ p: 2, px: 1 }}>
-              <TextField
-                select
-                size="small"
-                variant="outlined"
-                onChange={e => setDeploymentId(e.target.value)}
-                value={deploymentId}
-                label={t('Deployment')}
-              >
-                {deployments.map(d => (
-                  <MenuItem key={d.jsonData.metadata.uid} value={d.jsonData.metadata.uid}>
-                    {d.jsonData.metadata.name}
-                  </MenuItem>
-                ))}
-              </TextField>
+              <DeploymentSelector
+                selectedDeployment={selectedDeploymentName}
+                deployments={deployments.map(d => ({ name: d.jsonData.metadata.name as string }))}
+                onDeploymentChange={setSelectedDeploymentName}
+                suppressLiveRegion
+              />
             </Box>
           )}
           {selectedDeployment && (
