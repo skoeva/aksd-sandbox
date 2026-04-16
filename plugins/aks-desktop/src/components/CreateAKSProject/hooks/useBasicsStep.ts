@@ -1,11 +1,25 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the Apache 2.0.
 
-import { K8s } from '@kinvolk/headlamp-plugin/lib';
+import { K8s, useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { useEffect, useRef } from 'react';
 import { useAzureAuth } from '../../../hooks/useAzureAuth';
 import type { SearchableSelectOption } from '../components/SearchableSelect';
-import type { AzureCluster, BasicsStepProps } from '../types';
+import type { AzureCluster, AzureSubscription, FormData } from '../types';
+
+/**
+ * The subset of {@link BasicsStepProps} that {@link useBasicsStep} actually
+ * reads. Keeping the hook's input narrow makes the dependency contract explicit
+ * and simplifies testing.
+ */
+export interface UseBasicsStepInput {
+  formData: FormData;
+  onFormDataChange: (updates: Partial<FormData>) => void;
+  subscriptions: AzureSubscription[];
+  clusters: AzureCluster[];
+  loadingClusters: boolean;
+  totalClusterCount: number | null;
+}
 
 // ---------------------------------------------------------------------------
 // Pure helper functions (no hooks, fully testable in isolation)
@@ -115,6 +129,8 @@ export interface UseBasicsStepResult {
   clusterOptions: SearchableSelectOption[];
   /** Helper text shown below the Cluster select field. */
   clusterHelperText: string;
+  /** The currently selected Azure subscription object, or `undefined` if none. */
+  selectedSubscription: AzureSubscription | undefined;
   /** The currently selected Azure cluster object, or `undefined` if none. */
   selectedCluster: AzureCluster | undefined;
   /**
@@ -158,13 +174,10 @@ export interface UseBasicsStepResult {
  * - Provide `handleInputChange` and `handleClusterChange` callbacks that
  *   delegate to `props.onFormDataChange`.
  *
- * @param props - The full {@link BasicsStepProps} received by the component.
- * @param t - The i18n translation function from `useTranslation`.
+ * @param props - The fields from {@link UseBasicsStepInput} that the hook needs.
  */
-export function useBasicsStep(
-  props: BasicsStepProps,
-  t: (key: string, options?: Record<string, unknown>) => string
-): UseBasicsStepResult {
+export function useBasicsStep(props: UseBasicsStepInput): UseBasicsStepResult {
+  const { t } = useTranslation();
   const {
     formData,
     onFormDataChange,
@@ -192,7 +205,7 @@ export function useBasicsStep(
   const autoSelected = useRef(false);
   useEffect(() => {
     if (
-      autoSelected.current === false &&
+      !autoSelected.current &&
       authStatus?.subscriptionId &&
       !formData.subscription &&
       subscriptions &&
@@ -201,7 +214,7 @@ export function useBasicsStep(
       autoSelected.current = true;
       onFormDataChange({ subscription: authStatus.subscriptionId });
     }
-  }, [formData.subscription, authStatus?.subscriptionId, subscriptions]);
+  }, [formData.subscription, authStatus?.subscriptionId, subscriptions, onFormDataChange]);
 
   // ---------------------------------------------------------------------------
   // Derived values
@@ -226,20 +239,24 @@ export function useBasicsStep(
     totalClusterCount
   );
 
+  const selectedSubscription = formData.subscription
+    ? subscriptions.find(s => s.id === formData.subscription)
+    : undefined;
+
   const selectedCluster = formData.cluster
     ? clusters.find(c => c.name === formData.cluster)
     : undefined;
 
   const isClusterMissing =
     selectedCluster !== undefined &&
-    Object.values(headlampClusters).find((it: any) => it.name === selectedCluster.name) ===
+    Object.values(headlampClusters || {}).find((it: any) => it.name === selectedCluster.name) ===
       undefined;
 
   const nonReadyCluster: UseBasicsStepResult['nonReadyCluster'] =
     selectedCluster && isClusterNonReady(selectedCluster)
       ? {
           cluster: selectedCluster,
-          message: getClusterStateMessage(selectedCluster, t as (key: string) => string),
+          message: getClusterStateMessage(selectedCluster, t),
         }
       : null;
 
@@ -263,6 +280,7 @@ export function useBasicsStep(
     subscriptionOptions,
     clusterOptions,
     clusterHelperText,
+    selectedSubscription,
     selectedCluster,
     isClusterMissing,
     nonReadyCluster,

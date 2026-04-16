@@ -236,7 +236,7 @@ describe('useBasicsStep', () => {
   });
 
   test('maps subscriptions to SearchableSelectOption format', () => {
-    const { result } = renderHook(() => useBasicsStep(makeProps(), t));
+    const { result } = renderHook(() => useBasicsStep(makeProps()));
     expect(result.current.subscriptionOptions).toHaveLength(1);
     expect(result.current.subscriptionOptions[0]).toMatchObject({
       value: 'sub-123',
@@ -247,7 +247,7 @@ describe('useBasicsStep', () => {
   });
 
   test('maps clusters to SearchableSelectOption format', () => {
-    const { result } = renderHook(() => useBasicsStep(makeProps(), t));
+    const { result } = renderHook(() => useBasicsStep(makeProps()));
     expect(result.current.clusterOptions).toHaveLength(1);
     expect(result.current.clusterOptions[0]).toMatchObject({
       value: 'aks-prod',
@@ -258,8 +258,21 @@ describe('useBasicsStep', () => {
     expect(result.current.clusterOptions[0].subtitle).toContain('3 nodes');
   });
 
+  test('selectedSubscription is undefined when no subscription is selected', () => {
+    const { result } = renderHook(() => useBasicsStep(makeProps()));
+    expect(result.current.selectedSubscription).toBeUndefined();
+  });
+
+  test('selectedSubscription returns the matching subscription object', () => {
+    const props = makeProps({
+      formData: { ...makeProps().formData, subscription: 'sub-123' },
+    });
+    const { result } = renderHook(() => useBasicsStep(props));
+    expect(result.current.selectedSubscription).toEqual(SUBSCRIPTION);
+  });
+
   test('selectedCluster, isClusterMissing, and nonReadyCluster are all falsy when no cluster is selected', () => {
-    const { result } = renderHook(() => useBasicsStep(makeProps(), t));
+    const { result } = renderHook(() => useBasicsStep(makeProps()));
     expect(result.current.selectedCluster).toBeUndefined();
     expect(result.current.isClusterMissing).toBe(false);
     expect(result.current.nonReadyCluster).toBeNull();
@@ -282,7 +295,7 @@ describe('useBasicsStep', () => {
         userAssignments: [],
       },
     });
-    const { result } = renderHook(() => useBasicsStep(props, t));
+    const { result } = renderHook(() => useBasicsStep(props));
     expect(result.current.selectedCluster).toEqual(CLUSTER_RUNNING);
   });
 
@@ -304,7 +317,7 @@ describe('useBasicsStep', () => {
         userAssignments: [],
       },
     });
-    const { result } = renderHook(() => useBasicsStep(props, t));
+    const { result } = renderHook(() => useBasicsStep(props));
     expect(result.current.isClusterMissing).toBe(true);
   });
 
@@ -326,7 +339,7 @@ describe('useBasicsStep', () => {
         userAssignments: [],
       },
     });
-    const { result } = renderHook(() => useBasicsStep(props, t));
+    const { result } = renderHook(() => useBasicsStep(props));
     expect(result.current.isClusterMissing).toBe(false);
   });
 
@@ -347,7 +360,7 @@ describe('useBasicsStep', () => {
         userAssignments: [],
       },
     });
-    const { result } = renderHook(() => useBasicsStep(props, t));
+    const { result } = renderHook(() => useBasicsStep(props));
     expect(result.current.nonReadyCluster).toBeNull();
   });
 
@@ -369,7 +382,7 @@ describe('useBasicsStep', () => {
         userAssignments: [],
       },
     });
-    const { result } = renderHook(() => useBasicsStep(props, t));
+    const { result } = renderHook(() => useBasicsStep(props));
     expect(result.current.nonReadyCluster).not.toBeNull();
     expect(result.current.nonReadyCluster?.cluster).toEqual(CLUSTER_UPDATING);
     expect(result.current.nonReadyCluster?.message).toBe(
@@ -379,14 +392,14 @@ describe('useBasicsStep', () => {
 
   test('handleInputChange calls onFormDataChange with the correct field patch', () => {
     const onFormDataChange = vi.fn();
-    const { result } = renderHook(() => useBasicsStep(makeProps({ onFormDataChange }), t));
+    const { result } = renderHook(() => useBasicsStep(makeProps({ onFormDataChange })));
     act(() => result.current.handleInputChange('projectName', 'new-name'));
     expect(onFormDataChange).toHaveBeenCalledWith({ projectName: 'new-name' });
   });
 
   test('handleClusterChange updates both cluster and resourceGroup', () => {
     const onFormDataChange = vi.fn();
-    const { result } = renderHook(() => useBasicsStep(makeProps({ onFormDataChange }), t));
+    const { result } = renderHook(() => useBasicsStep(makeProps({ onFormDataChange })));
     act(() => result.current.handleClusterChange('aks-prod'));
     expect(onFormDataChange).toHaveBeenCalledWith({
       cluster: 'aks-prod',
@@ -396,7 +409,7 @@ describe('useBasicsStep', () => {
 
   test('handleClusterChange does nothing when the cluster name is not in the list', () => {
     const onFormDataChange = vi.fn();
-    const { result } = renderHook(() => useBasicsStep(makeProps({ onFormDataChange }), t));
+    const { result } = renderHook(() => useBasicsStep(makeProps({ onFormDataChange })));
     act(() => result.current.handleClusterChange('nonexistent-cluster'));
     expect(onFormDataChange).not.toHaveBeenCalled();
   });
@@ -408,7 +421,7 @@ describe('useBasicsStep', () => {
       subscriptionId: 'sub-123',
     });
     const onFormDataChange = vi.fn();
-    renderHook(() => useBasicsStep(makeProps({ onFormDataChange }), t));
+    renderHook(() => useBasicsStep(makeProps({ onFormDataChange })));
     expect(onFormDataChange).toHaveBeenCalledWith({ subscription: 'sub-123' });
   });
 
@@ -437,8 +450,7 @@ describe('useBasicsStep', () => {
             memoryLimit: 4096,
             userAssignments: [],
           },
-        }),
-        t
+        })
       )
     );
     expect(onFormDataChange).not.toHaveBeenCalled();
@@ -451,7 +463,7 @@ describe('useBasicsStep', () => {
       subscriptionId: 'sub-999',
     });
     const onFormDataChange = vi.fn();
-    renderHook(() => useBasicsStep(makeProps({ onFormDataChange }), t));
+    renderHook(() => useBasicsStep(makeProps({ onFormDataChange })));
     expect(onFormDataChange).not.toHaveBeenCalled();
   });
 });
