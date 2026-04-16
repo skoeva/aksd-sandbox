@@ -59,7 +59,7 @@ export function useRegisterCluster(
   const [success, setSuccess] = useState<string | undefined>(undefined);
 
   const handleRegister = async () => {
-    if (!cluster || !subscription) {
+    if (!cluster || !resourceGroup || !subscription) {
       return;
     }
 
@@ -80,13 +80,11 @@ export function useRegisterCluster(
 
       if (!result.success) {
         setError(result.message);
-        setLoading(false);
         return;
       }
 
       if (DEBUG) console.debug('[AKS] Cluster registered successfully.', result.message);
       setSuccess(t("Cluster '{{cluster}}' successfully merged in kubeconfig", { cluster }));
-      setLoading(false);
     } catch (err) {
       console.error('Error registering AKS cluster:', err);
       setError(
@@ -94,6 +92,7 @@ export function useRegisterCluster(
           message: err instanceof Error ? err.message : t('Unknown error'),
         })
       );
+    } finally {
       setLoading(false);
     }
   };

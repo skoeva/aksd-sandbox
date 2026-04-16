@@ -131,7 +131,6 @@ export const BasicsStep: React.FC<BasicsStepProps> = props => {
     validation,
     loading = false,
     error = null,
-    subscriptions,
     loadingClusters,
     clusterError,
     extensionStatus,
@@ -151,12 +150,13 @@ export const BasicsStep: React.FC<BasicsStepProps> = props => {
     subscriptionOptions,
     clusterOptions,
     clusterHelperText,
+    selectedSubscription,
     selectedCluster,
     isClusterMissing,
     nonReadyCluster,
     handleInputChange,
     handleClusterChange,
-  } = useBasicsStep(props, t);
+  } = useBasicsStep(props);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -371,7 +371,7 @@ export const BasicsStep: React.FC<BasicsStepProps> = props => {
             cluster={selectedCluster.name}
             resourceGroup={selectedCluster.resourceGroup}
             subscription={formData.subscription}
-            tenantId={subscriptions.find(s => s.id === formData.subscription)?.tenant}
+            tenantId={selectedSubscription?.tenant}
           />
         )}
 

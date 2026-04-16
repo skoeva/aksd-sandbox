@@ -4,7 +4,7 @@
 // @vitest-environment jsdom
 
 import { act, renderHook } from '@testing-library/react';
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -35,6 +35,11 @@ import { useRegisterCluster } from './useRegisterCluster';
 describe('useRegisterCluster', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   test('starts with loading=false, no error, no success', () => {
@@ -45,14 +50,23 @@ describe('useRegisterCluster', () => {
   });
 
   test('handleRegister sets loading=true while the call is in flight', async () => {
-    // Never resolves so we can inspect intermediate state
-    mockRegisterAKSCluster.mockReturnValue(new Promise(() => {}));
+    let resolveRegister!: (value: { success: boolean; message: string }) => void;
+    const registerPromise = new Promise<{ success: boolean; message: string }>(resolve => {
+      resolveRegister = resolve;
+    });
+    mockRegisterAKSCluster.mockReturnValue(registerPromise);
     const { result } = renderHook(() => useRegisterCluster('aks-prod', 'rg-prod', 'sub-123'));
 
+    let handleRegisterPromise!: Promise<void>;
     act(() => {
-      result.current.handleRegister();
+      handleRegisterPromise = result.current.handleRegister();
     });
     expect(result.current.loading).toBe(true);
+
+    await act(async () => {
+      resolveRegister({ success: true, message: 'ok' });
+      await handleRegisterPromise;
+    });
   });
 
   test('handleRegister sets success message on result.success=true', async () => {
@@ -171,9 +185,13 @@ describe('useRegisterCluster', () => {
   });
 
   test('clears previous error before a new registration attempt', async () => {
+    let resolveSecond!: (value: { success: boolean; message: string }) => void;
+    const secondPromise = new Promise<{ success: boolean; message: string }>(resolve => {
+      resolveSecond = resolve;
+    });
     mockRegisterAKSCluster
       .mockResolvedValueOnce({ success: false, message: 'first error' })
-      .mockReturnValueOnce(new Promise(() => {})); // second call hangs
+      .mockReturnValueOnce(secondPromise);
 
     const { result } = renderHook(() => useRegisterCluster('aks-prod', 'rg-prod', 'sub-123'));
 
@@ -182,10 +200,16 @@ describe('useRegisterCluster', () => {
     });
     expect(result.current.error).toBe('first error');
 
+    let secondHandlePromise!: Promise<void>;
     act(() => {
-      result.current.handleRegister();
+      secondHandlePromise = result.current.handleRegister();
     });
     // error should be cleared immediately when the second attempt starts
     expect(result.current.error).toBeUndefined();
+
+    await act(async () => {
+      resolveSecond({ success: true, message: 'ok' });
+      await secondHandlePromise;
+    });
   });
 });
