@@ -80,18 +80,6 @@ describe('SR: ComputeStep — Default', () => {
     expect(ps.some(p => /quota limits|overuse|cluster stability/i.test(p))).toBe(true);
   });
 
-  it('announces the "CPU Resources" section heading at h3', async () => {
-    render(<ComputeStep {...COMPUTE_BASE_PROPS} />);
-    await virtual.start({ container: document.body });
-    expect(await phrases()).toContain('heading, CPU Resources, level 3');
-  });
-
-  it('announces the "Memory Resources" section heading at h3', async () => {
-    render(<ComputeStep {...COMPUTE_BASE_PROPS} />);
-    await virtual.start({ container: document.body });
-    expect(await phrases()).toContain('heading, Memory Resources, level 3');
-  });
-
   it('announces both section headings in document order (CPU before Memory)', async () => {
     render(<ComputeStep {...COMPUTE_BASE_PROPS} />);
     await virtual.start({ container: document.body });

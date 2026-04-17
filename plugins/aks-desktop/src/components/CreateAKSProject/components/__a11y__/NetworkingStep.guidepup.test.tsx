@@ -124,18 +124,6 @@ describe('SR: NetworkingStep — Default', () => {
 
 // ── NetworkingStep — DenyAll ──────────────────────────────────────────────────
 describe('SR: NetworkingStep — DenyAll', () => {
-  it('announces Ingress value "Deny all traffic" when DenyAll is selected', async () => {
-    render(
-      <NetworkingStep
-        {...NET_BASE_PROPS}
-        formData={{ ...NET_FORM_DATA, ingress: 'DenyAll', egress: 'DenyAll' }}
-      />
-    );
-    await virtual.start({ container: document.body });
-    const ps = await phrases();
-    expect(ps.filter(p => /deny all traffic/i.test(p)).length).toBeGreaterThanOrEqual(1);
-  });
-
   it('announces both Ingress and Egress comboboxes showing "Deny all traffic"', async () => {
     render(
       <NetworkingStep

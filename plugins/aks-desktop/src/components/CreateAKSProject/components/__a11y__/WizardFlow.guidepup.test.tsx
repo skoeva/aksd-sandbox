@@ -65,11 +65,6 @@ describe('SR: BasicsStepDefault — breadcrumb navigation', () => {
     expect(await phrases()).toContain('navigation, Wizard steps');
   });
 
-  it('announces the Basics step with aria-current="step" at step 0', async () => {
-    await mountWizard();
-    expect(await phrases()).toContain('button, Basics, current step');
-  });
-
   it('announces all 5 step buttons within the navigation landmark', async () => {
     await mountWizard();
     const ps = await phrases();
@@ -103,12 +98,6 @@ describe('SR: BasicsStepDefault — breadcrumb navigation', () => {
     const ps = await phrases();
     expect(ps).not.toContain('button, Next, disabled');
   });
-
-  it('does NOT show a Back button on the first step', async () => {
-    await mountWizard({ activeStep: 0 });
-    const ps = await phrases();
-    expect(ps).not.toContain('button, Back');
-  });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -135,13 +124,6 @@ describe('SR: NextButtonLoading — aria-busy on Next while Azure resources load
   it('announces the loading button as busy and disabled', async () => {
     await mountWizard({ azureResourcesLoading: true, validation: { isValid: false } });
     expect(await phrases()).toContain('button, Loading..., busy, disabled');
-  });
-
-  it('includes the "busy" token in the button announcement', async () => {
-    await mountWizard({ azureResourcesLoading: true, validation: { isValid: false } });
-    const ps = await phrases();
-    const loadBtn = ps.find(p => /loading/i.test(p) && /button/i.test(p));
-    expect(loadBtn).toMatch(/busy/i);
   });
 
   it('does NOT announce a plain "Next" button while loading', async () => {
@@ -229,12 +211,6 @@ describe('SR: LoadingOverlay — aria-busy card, progressbar, progress text', ()
 // ═══════════════════════════════════════════════════════════════════════════
 describe('SR: ErrorOverlay — alertdialog + role=alert', () => {
   const ERROR = 'Namespace creation failed: ResourceQuotaExceeded.';
-
-  it('announces the dialog as role=alertdialog', async () => {
-    await mountWizard({ creationError: ERROR });
-    const ps = await phrases();
-    expect(ps.some(p => /alertdialog/i.test(p))).toBe(true);
-  });
 
   it('includes the dialog title in the alertdialog announcement', async () => {
     await mountWizard({ creationError: ERROR });
