@@ -1,5 +1,5 @@
 /// <reference types="vitest" />
-import { coverageConfigDefaults,defineConfig } from 'vitest/config';
+import { coverageConfigDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
@@ -29,6 +29,7 @@ export default defineConfig({
         test: {
           name: 'a11y',
           environment: 'jsdom',
+          pool: 'threads',
           setupFiles: 'node_modules/@kinvolk/headlamp-plugin/config/setupTests.js',
           include: ['src/**/*.guidepup.test.tsx'],
           testTimeout: 30000,

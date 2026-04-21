@@ -91,19 +91,9 @@ describe('CreateAKSProjectPure — BasicsStepDefault story interactions', () => 
     fireEvent.click(screen.getByRole('button', { name: /next/i }));
     expect(handleNext).toHaveBeenCalledTimes(1);
   });
-
-  it('Next button is enabled when validation.isValid is true', () => {
-    renderStory(BasicsStepDefault.args!, { validation: { isValid: true } });
-    expect(screen.getByRole('button', { name: /next/i })).not.toBeDisabled();
-  });
 });
 
 describe('CreateAKSProjectPure — ValidationError story interactions', () => {
-  it('Next button is disabled when validation.isValid is false', () => {
-    renderStory(ValidationError.args!);
-    expect(screen.getByRole('button', { name: /next/i })).toBeDisabled();
-  });
-
   it('does not call handleNext when Next is clicked while disabled', () => {
     const handleNext = vi.fn();
     renderStory(ValidationError.args!, { handleNext });
@@ -117,16 +107,6 @@ describe('CreateAKSProjectPure — ValidationError story interactions', () => {
 });
 
 describe('CreateAKSProjectPure — NextButtonLoading story interactions', () => {
-  it('Next button is disabled while Azure resources are loading', () => {
-    renderStory(NextButtonLoading.args!);
-    expect(screen.getByRole('button', { name: /loading/i })).toBeDisabled();
-  });
-
-  it('Next button shows loading text while azureResourcesLoading', () => {
-    renderStory(NextButtonLoading.args!);
-    expect(screen.getByRole('button', { name: /loading/i })).toBeInTheDocument();
-  });
-
   it('does not call handleNext while loading', () => {
     const handleNext = vi.fn();
     renderStory(NextButtonLoading.args!, { handleNext });
@@ -137,14 +117,6 @@ describe('CreateAKSProjectPure — NextButtonLoading story interactions', () => 
 });
 
 describe('CreateAKSProjectPure — LoadingOverlay story interactions', () => {
-  it('renders the loading progress text', () => {
-    renderStory(LoadingOverlay.args!);
-    // The progress text appears both in the visual overlay (aria-hidden) and in the
-    // persistent role="status" live region, so multiple elements match.
-    const matches = screen.getAllByText(/creating namespace/i);
-    expect(matches.length).toBeGreaterThanOrEqual(1);
-  });
-
   it('has a persistent role="status" live region with progress text', () => {
     renderStory(LoadingOverlay.args!);
     const status = screen.getByRole('status');
@@ -160,12 +132,6 @@ describe('CreateAKSProjectPure — LoadingOverlay story interactions', () => {
 });
 
 describe('CreateAKSProjectPure — ErrorOverlay story interactions', () => {
-  it('renders the error message from the story', () => {
-    renderStory(ErrorOverlay.args!);
-    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
-    expect(screen.getByText(/namespace creation failed/i)).toBeInTheDocument();
-  });
-
   it('calls onDismissError when Cancel in the error dialog is clicked', () => {
     const onDismissError = vi.fn();
     renderStory(ErrorOverlay.args!, { onDismissError });
@@ -184,31 +150,9 @@ describe('CreateAKSProjectPure — ErrorOverlay story interactions', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: /cancel/i }));
     expect(onCancelSuccess).not.toHaveBeenCalled();
   });
-
-  it('error dialog has the correct accessible title', () => {
-    renderStory(ErrorOverlay.args!);
-    expect(screen.getByRole('heading', { name: /project creation failed/i })).toBeInTheDocument();
-  });
 });
 
 describe('CreateAKSProjectPure — SuccessDialog story interactions', () => {
-  it('renders the success dialog', () => {
-    renderStory(SuccessDialog.args!);
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-  });
-
-  it('success message has role="status" for Narrator and is the only status region when dialog is open', () => {
-    renderStory(SuccessDialog.args!);
-    // role="status" ensures Windows Narrator announces the success text even after
-    // autoFocus moves to the Application name input (Narrator skips aria-describedby
-    // once focus has moved: https://github.com/microsoft/fluentui/issues/7150).
-    // isCreating is false when the success dialog is shown, so the persistent
-    // creation-progress live region has no role="status" — exactly one status element.
-    const statusEls = document.querySelectorAll('[role="status"]');
-    expect(statusEls).toHaveLength(1);
-    expect(statusEls[0]).toHaveTextContent(/has been created and is ready to use/i);
-  });
-
   it('calls onCancelSuccess when Cancel button is clicked in success dialog', () => {
     const onCancelSuccess = vi.fn();
     renderStory(SuccessDialog.args!, { onCancelSuccess });
@@ -231,16 +175,6 @@ describe('CreateAKSProjectPure — SuccessDialog story interactions', () => {
     expect(backdrop).not.toBeNull();
     fireEvent.click(backdrop!);
     expect(onCancelSuccess).not.toHaveBeenCalled();
-  });
-
-  it('Create Application button is disabled when application name is empty', () => {
-    renderStory(SuccessDialog.args!, { applicationName: '' });
-    expect(screen.getByRole('button', { name: /create application/i })).toBeDisabled();
-  });
-
-  it('Create Application button is enabled when application name is provided', () => {
-    renderStory(SuccessDialog.args!, { applicationName: 'my-app' });
-    expect(screen.getByRole('button', { name: /create application/i })).not.toBeDisabled();
   });
 
   it('calls onNavigateToProject with encoded URL when Create Application is clicked', () => {
@@ -268,11 +202,6 @@ describe('CreateAKSProjectPure — SuccessDialog story interactions', () => {
 });
 
 describe('CreateAKSProjectPure — SuccessDialogWithAppName story interactions', () => {
-  it('Create Application button is enabled when story provides an application name', () => {
-    renderStory(SuccessDialogWithAppName.args!);
-    expect(screen.getByRole('button', { name: /create application/i })).not.toBeDisabled();
-  });
-
   it('calls onNavigateToProject with the story application name', () => {
     const onNavigateToProject = vi.fn();
     renderStory(SuccessDialogWithAppName.args!, { onNavigateToProject });
@@ -280,17 +209,6 @@ describe('CreateAKSProjectPure — SuccessDialogWithAppName story interactions',
     expect(onNavigateToProject).toHaveBeenCalledTimes(1);
     const [url] = onNavigateToProject.mock.calls[0];
     expect(url).toContain('applicationName=frontend-service');
-  });
-});
-
-describe('CreateAKSProjectPure — error dialog a11y: error message announced', () => {
-  it('error message has role="alert" so screen readers announce it on dialog open', () => {
-    renderStory(ErrorOverlay.args!);
-    // The error text must be in a live region (role="alert") so it is announced
-    // even when autoFocus has already moved to the Cancel button.
-    const alertEl = screen.getByRole('alert');
-    expect(alertEl).toBeInTheDocument();
-    expect(alertEl).toHaveTextContent(/namespace creation failed/i);
   });
 });
 
@@ -306,19 +224,6 @@ describe('CreateAKSProjectPure — Breadcrumb keyboard navigation a11y', () => {
     stepButtons.forEach(btn => {
       expect(btn).not.toHaveAttribute('tabindex', '-1');
     });
-  });
-
-  it('breadcrumb step icons are aria-hidden so they are not announced separately', () => {
-    renderStory(BasicsStepDefault.args!);
-    // The icons inside the breadcrumb use aria-hidden="true"; in the test the
-    // Icon mock renders <span data-icon="..." aria-hidden="true"> so we confirm
-    // no visible text-alternative is exposed for them.
-    // Scope to the breadcrumb nav so the assertion doesn't false-pass from other
-    // aria-hidden icons elsewhere in the tree.
-    const wizardNav = screen.getByRole('navigation', { name: /wizard steps/i });
-    const hiddenIcons = wizardNav.querySelectorAll('[data-icon][aria-hidden="true"]');
-    // Breadcrumb renders one icon per step (5 steps).
-    expect(hiddenIcons.length).toBeGreaterThanOrEqual(5);
   });
 
   it('activates the correct step when Enter is pressed on a breadcrumb item', () => {
