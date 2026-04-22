@@ -13,60 +13,35 @@ import {
   Typography,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import React, { useState } from 'react';
-import { useHistory } from 'react-router-dom';
-import { useAzureAuth } from '../../hooks/useAzureAuth';
-import { PROFILE_REDIRECT_DELAY_MS } from '../../utils/constants/timing';
+import React from 'react';
+import { useAzureProfilePage } from './hooks/useAzureProfilePage';
 
+/**
+ * Azure Profile page.
+ *
+ * Displays the logged-in user's Azure account details and provides actions to
+ * add a cluster or log out. Redirects to `/azure/login` when the user is not
+ * authenticated.
+ *
+ * All stateful logic (auth state, logout flow, navigation, redirect guard)
+ * lives in {@link useAzureProfilePage}.
+ */
 export default function AzureProfilePage() {
-  const history = useHistory();
   const { t } = useTranslation();
-  const authStatus = useAzureAuth();
-  const [loggingOut, setLoggingOut] = useState(false);
   const theme = useTheme();
+  const {
+    isChecking,
+    isLoggedIn,
+    username,
+    tenantId,
+    subscriptionId,
+    loggingOut,
+    handleBack,
+    handleAddCluster,
+    handleLogout,
+  } = useAzureProfilePage();
 
-  const handleBack = () => {
-    history.push('/');
-  };
-
-  const handleAddCluster = () => {
-    history.push('/add-cluster-aks');
-  };
-
-  const handleLogout = async () => {
-    setLoggingOut(true);
-    try {
-      // Import dynamically to avoid circular dependencies
-      const { runCommandAsync } = await import('../../utils/azure/az-cli-core');
-      const result = await runCommandAsync('az', ['logout']);
-
-      if (result.stderr && result.stderr.includes('ERROR:')) {
-        console.error('Azure CLI logout error:', result.stderr);
-        setLoggingOut(false);
-        return;
-      }
-
-      // Trigger update event for sidebar label
-      window.dispatchEvent(new CustomEvent('azure-auth-update'));
-
-      // Redirect to login page after logout
-      setTimeout(() => {
-        history.push('/azure/login');
-      }, PROFILE_REDIRECT_DELAY_MS);
-    } catch (error) {
-      console.error('Error logging out:', error);
-      setLoggingOut(false);
-    }
-  };
-
-  // Redirect to login page if not logged in
-  React.useEffect(() => {
-    if (!authStatus.isChecking && !authStatus.isLoggedIn) {
-      history.push('/azure/login');
-    }
-  }, [authStatus.isChecking, authStatus.isLoggedIn, history]);
-
-  if (authStatus.isChecking) {
+  if (isChecking) {
     return (
       <Box
         sx={{
@@ -96,7 +71,7 @@ export default function AzureProfilePage() {
   }
 
   // Don't render anything if not logged in (will redirect)
-  if (!authStatus.isLoggedIn) {
+  if (!isLoggedIn) {
     return null;
   }
 
@@ -151,10 +126,10 @@ export default function AzureProfilePage() {
             </Typography>
 
             <Typography variant="body1" sx={{ mb: 3, color: theme.palette.text.secondary }}>
-              {t('Logged in as')} <strong>{authStatus.username}</strong>
+              {t('Logged in as')} <strong>{username}</strong>
             </Typography>
 
-            {authStatus.tenantId && (
+            {tenantId && (
               <Box
                 sx={{
                   mb: 3,
@@ -175,12 +150,12 @@ export default function AzureProfilePage() {
                   Tenant ID
                 </Typography>
                 <Typography variant="body2" sx={{ fontSize: '1rem', wordBreak: 'break-all' }}>
-                  {authStatus.tenantId}
+                  {tenantId}
                 </Typography>
               </Box>
             )}
 
-            {authStatus.subscriptionId && (
+            {subscriptionId && (
               <Box
                 sx={{
                   mb: 3,
@@ -201,7 +176,7 @@ export default function AzureProfilePage() {
                   Default Subscription ID
                 </Typography>
                 <Typography variant="body2" sx={{ fontSize: '1rem', wordBreak: 'break-all' }}>
-                  {authStatus.subscriptionId}
+                  {subscriptionId}
                 </Typography>
               </Box>
             )}
