@@ -1,6 +1,8 @@
 /// <reference types="vitest" />
 import { coverageConfigDefaults, defineConfig } from 'vitest/config';
 
+const setupFiles = '@kinvolk/headlamp-plugin/config/setupTests.js';
+
 export default defineConfig({
   test: {
     globals: true,
@@ -20,7 +22,7 @@ export default defineConfig({
         test: {
           name: 'unit',
           environment: 'jsdom',
-          setupFiles: 'node_modules/@kinvolk/headlamp-plugin/config/setupTests.js',
+          setupFiles,
           include: ['src/**/*.test.{ts,tsx}'],
           exclude: ['src/**/*.guidepup.test.tsx'],
         },
@@ -30,7 +32,7 @@ export default defineConfig({
           name: 'a11y',
           environment: 'jsdom',
           pool: 'threads',
-          setupFiles: 'node_modules/@kinvolk/headlamp-plugin/config/setupTests.js',
+          setupFiles,
           include: ['src/**/*.guidepup.test.tsx'],
           testTimeout: 30000,
         },
