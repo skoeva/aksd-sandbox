@@ -1,0 +1,12 @@
+name: ACR E2E bootstrap
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Dispatch the dedicated E2E branch"
