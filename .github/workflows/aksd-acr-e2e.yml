@@ -7,7 +7,7 @@ concurrency:
 env:
   AZURE_CONTAINER_REGISTRY: aksdrest291792609552
   AZURE_ACR_RESOURCE_ID: /subscriptions/10d023e1-58c4-4eb7-b386-4ded55597abb/resourceGroups/aksd-rest29-e2e-1792609552/providers/Microsoft.ContainerRegistry/registries/aksdrest291792609552
-  CONTAINER_NAME: rest29-00d6500c-success
+  CONTAINER_NAME: rest29-fab1491d-success
   CLUSTER_NAME: not-used
   CLUSTER_RESOURCE_GROUP: not-used
   DEPLOYMENT_MANIFEST_PATH: ./deploy/kubernetes
@@ -35,10 +35,10 @@ jobs:
           AZURE_ACR_RESOURCE_ID: /subscriptions/10d023e1-58c4-4eb7-b386-4ded55597abb/resourceGroups/aksd-rest29-e2e-1792609552/providers/Microsoft.ContainerRegistry/registries/aksdrest291792609552
           AZURE_CONTAINER_REGISTRY: aksdrest291792609552
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          CONTAINER_NAME: rest29-00d6500c-success
+          CONTAINER_NAME: rest29-fab1491d-success
           DOCKER_FILE: fixtures/acr-e2e/services/api/Dockerfile
           BUILD_CONTEXT_PATH: fixtures/acr-e2e/services/api
-          BUILD_ARGUMENTS: '{"E2E_MARKER":"rest29-00d6500c-success"}'
+          BUILD_ARGUMENTS: '{"E2E_MARKER":"rest29-fab1491d-success"}'
         run: |
           exec python3 .github/scripts/aksd-acr-build.py
       - name: Cancel unfinished ACR build
@@ -48,10 +48,10 @@ jobs:
           AZURE_ACR_RESOURCE_ID: /subscriptions/10d023e1-58c4-4eb7-b386-4ded55597abb/resourceGroups/aksd-rest29-e2e-1792609552/providers/Microsoft.ContainerRegistry/registries/aksdrest291792609552
           AZURE_CONTAINER_REGISTRY: aksdrest291792609552
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          CONTAINER_NAME: rest29-00d6500c-success
+          CONTAINER_NAME: rest29-fab1491d-success
           DOCKER_FILE: fixtures/acr-e2e/services/api/Dockerfile
           BUILD_CONTEXT_PATH: fixtures/acr-e2e/services/api
-          BUILD_ARGUMENTS: '{"E2E_MARKER":"rest29-00d6500c-success"}'
+          BUILD_ARGUMENTS: '{"E2E_MARKER":"rest29-fab1491d-success"}'
         run: |
           exec python3 .github/scripts/aksd-acr-build.py --cancel
   deploy:
