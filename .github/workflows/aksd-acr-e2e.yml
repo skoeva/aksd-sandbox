@@ -1,12 +1,65 @@
-name: ACR E2E bootstrap
-
+name: Deploy to AKS
 on:
-  workflow_dispatch:
-
-permissions: {}
-
+  workflow_dispatch: null
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+env:
+  AZURE_CONTAINER_REGISTRY: aksdrest291792609552
+  AZURE_ACR_RESOURCE_ID: /subscriptions/10d023e1-58c4-4eb7-b386-4ded55597abb/resourceGroups/aksd-rest29-e2e-1792609552/providers/Microsoft.ContainerRegistry/registries/aksdrest291792609552
+  CONTAINER_NAME: rest29-00d6500c-success
+  CLUSTER_NAME: not-used
+  CLUSTER_RESOURCE_GROUP: not-used
+  DEPLOYMENT_MANIFEST_PATH: ./deploy/kubernetes
+  DOCKER_FILE: fixtures/acr-e2e/services/api/Dockerfile
+  BUILD_CONTEXT_PATH: fixtures/acr-e2e/services/api
+  NAMESPACE: not-used
 jobs:
-  bootstrap:
+  buildImage:
+    permissions:
+      contents: read
+      id-token: write
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Dispatch the dedicated E2E branch"
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - name: Azure login
+        uses: azure/login@eec3c95657c1536435858eda1f3ff5437fee8474
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Build and push image to ACR
+        id: acr_build
+        shell: bash
+        env:
+          AZURE_ACR_RESOURCE_ID: /subscriptions/10d023e1-58c4-4eb7-b386-4ded55597abb/resourceGroups/aksd-rest29-e2e-1792609552/providers/Microsoft.ContainerRegistry/registries/aksdrest291792609552
+          AZURE_CONTAINER_REGISTRY: aksdrest291792609552
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          CONTAINER_NAME: rest29-00d6500c-success
+          DOCKER_FILE: fixtures/acr-e2e/services/api/Dockerfile
+          BUILD_CONTEXT_PATH: fixtures/acr-e2e/services/api
+          BUILD_ARGUMENTS: '{"E2E_MARKER":"rest29-00d6500c-success"}'
+        run: |
+          exec python3 .github/scripts/aksd-acr-build.py
+      - name: Cancel unfinished ACR build
+        if: always() && steps.acr_build.outcome != 'success'
+        shell: bash
+        env:
+          AZURE_ACR_RESOURCE_ID: /subscriptions/10d023e1-58c4-4eb7-b386-4ded55597abb/resourceGroups/aksd-rest29-e2e-1792609552/providers/Microsoft.ContainerRegistry/registries/aksdrest291792609552
+          AZURE_CONTAINER_REGISTRY: aksdrest291792609552
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          CONTAINER_NAME: rest29-00d6500c-success
+          DOCKER_FILE: fixtures/acr-e2e/services/api/Dockerfile
+          BUILD_CONTEXT_PATH: fixtures/acr-e2e/services/api
+          BUILD_ARGUMENTS: '{"E2E_MARKER":"rest29-00d6500c-success"}'
+        run: |
+          exec python3 .github/scripts/aksd-acr-build.py --cancel
+  deploy:
+    permissions: {}
+    runs-on: ubuntu-latest
+    needs:
+      - buildImage
+    steps:
+      - name: ACR E2E deployment gate
+        run: echo "Generated build succeeded; no AKS deployment performed"
+    name: ACR E2E deployment gate
