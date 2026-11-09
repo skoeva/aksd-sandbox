@@ -1,51 +1,69 @@
-name: Build aks-desktop (Windows)
+name: Sandbox Windows ARM64 installer validation
 
 on:
-  schedule:
-    # Runs every day at 1:00 AM UTC
-    - cron: '0 1 * * *'
   workflow_dispatch:
     inputs:
       aks_plugin_branch:
-        description: 'Branch to build aks-plugin'
+        description: Exact PR 1114 source commit to build
         required: true
-        default: 'main'
+        default: 697e0bfd1ce1c903967d1d2ce307ea8c5e676922
 
 permissions:
   contents: read
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: x64
-            runner: windows-latest
-          - arch: arm64
-            runner: windows-11-arm
-    runs-on: ${{ matrix.runner }}
+  installed-arm64:
+    if: github.repository == 'skoeva/aksd-sandbox'
+    runs-on: windows-11-arm
+    timeout-minutes: 90
     defaults:
       run:
-        shell: bash
+        shell: pwsh
+    env:
+      AKS_INSTALL_RESULTS: installer-test-results
+      EXPECTED_SOURCE_SHA: 697e0bfd1ce1c903967d1d2ce307ea8c5e676922
     steps:
-      - name: Checkout this repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Checkout exact application source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: ${{ github.event.inputs.aks_plugin_branch }}
-          submodules: false
+          ref: ${{ inputs.aks_plugin_branch }}
+          persist-credentials: false
 
-      - name: Setup nodejs
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - name: Checkout sandbox-only test harness
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          path: .installer-validation
+          sparse-checkout: test/installer
+          persist-credentials: false
+
+      - name: Validate PowerShell harness syntax
+        run: |
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path $PWD '.installer-validation/test/installer/windows-lifecycle.ps1'),
+            [ref]$tokens,
+            [ref]$parseErrors
+          ) | Out-Null
+          if ($parseErrors.Count -gt 0) {
+            $parseErrors | Format-List
+            throw 'Invalid installer validation script'
+          }
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version: 22.22.2
+          cache: npm
 
       - name: Resolve Headlamp Go version
         id: go-version
+        shell: bash
         run: echo "version=$(node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types build/go-version.ts)" >> "$GITHUB_OUTPUT"
 
-      - name: Install golang
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
         with:
           go-version: ${{ steps.go-version.outputs.version }}
           cache-dependency-path: |
@@ -53,25 +71,44 @@ jobs:
             patches/*.patch
 
       - name: Setup pinned npm
-        shell: pwsh
         run: |
           npm ci --prefix .config/npm --ignore-scripts --no-audit --no-fund
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Join-Path $env:GITHUB_WORKSPACE '.config/npm/node_modules/.bin' | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          Join-Path $env:GITHUB_WORKSPACE '.config/npm/node_modules/.bin' |
+            Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit --no-fund
 
-      - name: Setup AKS desktop and Build Headlamp (Windows)
-        run: npm run build:win:${{ matrix.arch }}
-        shell: bash
+      - name: Build exact PR Windows ARM64 installer
+        run: npm run build:win:arm64
 
-      - name: Validate the packaged application
+      - name: Validate unpacked application and bundled tools
         run: npm run test:distribution
-        shell: bash
 
-      - name: Upload Windows build artifact
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      - name: Install, validate installed GUI, and uninstall
+        timeout-minutes: 15
+        run: |
+          & ./.installer-validation/test/installer/windows-lifecycle.ps1 `
+            -SourceRoot $PWD `
+            -ResultsDir $env:AKS_INSTALL_RESULTS
+
+      - name: Upload installer lifecycle diagnostics
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
-          name: aks-desktop-win-${{ matrix.arch }}
-          path: node_modules/@headlamp-k8s/headlamp-source/source/app/dist/aks-desktop*.*
+          name: aks-pr1114-installer-validation
+          path: |
+            ${{ env.AKS_INSTALL_RESULTS }}
+            test/packaged/test-results
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Retain unsigned test installer
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: aks-pr1114-windows-arm64-installer
+          path: node_modules/@headlamp-k8s/headlamp-source/source/app/dist/aks-desktop-*-win-arm64.exe
+          if-no-files-found: warn
+          retention-days: 7
