@@ -7,6 +7,9 @@ on:
         description: 'Branch to build aks-plugin'
         required: true
         default: '5ae164f140a4a6dd714e0a9e937c0437a7b6b384'
+      reuse_run:
+        description: Optional sandbox run containing packages and source-identity proof
+        default: ''
 
 permissions:
   contents: read
@@ -19,6 +22,7 @@ jobs:
     env:
       EXPECTED_SOURCE_SHA: 5ae164f140a4a6dd714e0a9e937c0437a7b6b384
       AKS_NATIVE_ARCH: ${{ matrix.arch }}
+      REUSE_RUN: ${{ inputs.reuse_run }}
     strategy:
       fail-fast: false
       matrix:
@@ -58,10 +62,12 @@ jobs:
           node-version: 22.22.2
 
       - name: Resolve Headlamp Go version
+        if: inputs.reuse_run == ''
         id: go-version
         run: echo "version=$(node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types build/go-version.ts)" >> "$GITHUB_OUTPUT"
 
       - name: Install golang
+        if: inputs.reuse_run == ''
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ steps.go-version.outputs.version }}
@@ -74,18 +80,40 @@ jobs:
           npm ci --prefix .config/npm --ignore-scripts --no-audit --no-fund
           echo "$PWD/.config/npm/node_modules/.bin" >> "$GITHUB_PATH"
           export PATH="$PWD/.config/npm/node_modules/.bin:$PATH"
-          npm ci --prefer-offline --no-audit --no-fund
+          if [ -n "$REUSE_RUN" ]; then
+            npm ci --ignore-scripts --no-audit --no-fund
+          else
+            npm ci --prefer-offline --no-audit --no-fund
+          fi
+
+      - name: Reuse packages from the verified native producer
+        if: inputs.reuse_run != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$REUSE_RUN" =~ ^[0-9]+$ ]]
+          gh run download "$REUSE_RUN" --repo "$GITHUB_REPOSITORY" --name "aks-desktop-linux-$AKS_NATIVE_ARCH" --dir reused-packages
+          gh run download "$REUSE_RUN" --repo "$GITHUB_REPOSITORY" --name "aks-desktop-linux-$AKS_NATIVE_ARCH-proof" --dir producer-proof
+          mapfile -t identities < <(find producer-proof -name identity.log -type f)
+          test "${#identities[@]}" -eq 1
+          test "$(head -n 1 "${identities[0]}")" = "$EXPECTED_SOURCE_SHA"
+          test "$(tail -n 1 "${identities[0]}")" = "$AKS_NATIVE_ARCH"
+          dist="node_modules/@headlamp-k8s/headlamp-source/source/app/dist"
+          mkdir -p "$dist"
+          cp reused-packages/* "$dist/"
 
       - name: Run Linux package regressions on the native host
         run: npm exec -- tsx --test build/linux-package-verification.test.ts build/package-target.test.ts build/azure-cli-config.test.ts
 
       - name: Setup AKS desktop and Build Headlamp (Linux)
+        if: inputs.reuse_run == ''
         run: npm run build:linux:${{ matrix.arch }}
 
       # Capture before strict checks, including when the build itself failed.
       # Diagnostic command failures are recorded; they never change the failed job result.
       - name: Capture package diagnostics
-        if: always()
+        if: always() && inputs.reuse_run == ''
         run: |
           mkdir -p linux-proof
           dist="node_modules/@headlamp-k8s/headlamp-source/source/app/dist"
@@ -115,6 +143,7 @@ jobs:
           cat linux-proof/elf-inventory.log
 
       - name: Validate the packaged application
+        if: inputs.reuse_run == ''
         run: |
           set -euo pipefail
           npm run test:distribution -- --no-sandbox 2>&1 | tee linux-proof/native-cli-and-app.log

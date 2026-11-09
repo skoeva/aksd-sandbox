@@ -101,8 +101,10 @@ try {
 
   run('sudo', ['apt-get', 'update']);
   installAttempted = true;
-  run('sudo', ['apt-get', 'install', '-y', '--no-install-recommends', 'xvfb', deb]);
-  const files = execFileSync('dpkg-query', ['-L', packageName], { encoding: 'utf8' }).split('\n');
+  run('sudo', ['apt-get', 'install', '-y', '--no-install-recommends', 'xvfb', 'xauth', deb]);
+  const files = execFileSync('dpkg-query', ['-L', packageName], {
+    encoding: 'utf8', maxBuffer: 32 * 1024 * 1024,
+  }).split('\n');
   const manifests = files.filter(file => file.endsWith('/resources/app-build-manifest.json'));
   assert.equal(manifests.length, 1);
   installedApp = path.dirname(path.dirname(manifests[0]));
