@@ -1,21 +1,24 @@
-name: Build aks-desktop (Linux)
+name: Sandbox Linux native package validation
 
 on:
-  schedule:
-    # Runs every day at 1:00 AM UTC
-    - cron: '0 1 * * *'
   workflow_dispatch:
     inputs:
       aks_plugin_branch:
         description: 'Branch to build aks-plugin'
         required: true
-        default: 'main'
+        default: '5ae164f140a4a6dd714e0a9e937c0437a7b6b384'
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   build:
+    if: github.repository == 'skoeva/aksd-sandbox'
+    timeout-minutes: 90
+    env:
+      EXPECTED_SOURCE_SHA: 5ae164f140a4a6dd714e0a9e937c0437a7b6b384
+      AKS_NATIVE_ARCH: ${{ matrix.arch }}
     strategy:
       fail-fast: false
       matrix:
@@ -31,11 +34,22 @@ jobs:
         with:
           ref: ${{ github.event.inputs.aks_plugin_branch }}
           submodules: false
+          persist-credentials: false
+
+      - name: Checkout sandbox-only installer harness
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          path: .installer-validation
+          sparse-checkout: test/installer
+          persist-credentials: false
 
       - name: Record native build identity
         run: |
           set -euo pipefail
           mkdir -p linux-proof
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE_SHA"
+          test "$(node -p 'process.arch')" = "$AKS_NATIVE_ARCH"
           { git rev-parse HEAD; uname -m; node -p 'process.arch'; } 2>&1 | tee linux-proof/identity.log
 
       - name: Setup nodejs
@@ -61,6 +75,9 @@ jobs:
           echo "$PWD/.config/npm/node_modules/.bin" >> "$GITHUB_PATH"
           export PATH="$PWD/.config/npm/node_modules/.bin:$PATH"
           npm ci --prefer-offline --no-audit --no-fund
+
+      - name: Run Linux package regressions on the native host
+        run: npm exec -- tsx --test build/linux-package-verification.test.ts build/package-target.test.ts build/azure-cli-config.test.ts
 
       - name: Setup AKS desktop and Build Headlamp (Linux)
         run: npm run build:linux:${{ matrix.arch }}
@@ -103,6 +120,7 @@ jobs:
           npm run test:distribution -- --no-sandbox 2>&1 | tee linux-proof/native-cli-and-app.log
 
       - name: Verify and stage exact Linux packages
+        id: packages
         run: |
           set -euo pipefail
           version="$(node -p "require('./package.json').version")"
@@ -110,10 +128,18 @@ jobs:
           npm exec -- tsx build/linux-package-verification.ts --stage-from="$dist" --dir=linux-packages --version="$version" --arches=${{ matrix.arch }} 2>&1 | tee linux-proof/artifact-verification.log
           npm exec -- tsx build/linux-package-verification.ts --dir=linux-packages --version="$version" --arches=${{ matrix.arch }} 2>&1 | tee -a linux-proof/artifact-verification.log
 
+      - name: Validate DEB install, installed GUI, tarball CLI, and purge
+        timeout-minutes: 15
+        run: |
+          set -euo pipefail
+          npm exec -- tsx .installer-validation/test/installer/linux-lifecycle.ts 2>&1 | tee linux-proof/installed-package.log
+
       - name: Upload Linux build artifact
+        if: always() && steps.packages.outcome == 'success'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: aks-desktop-linux-${{ matrix.arch }}
+          retention-days: 1
           if-no-files-found: error
           path: |
             linux-packages/aks-desktop_*-1_*.deb
@@ -125,4 +151,60 @@ jobs:
         with:
           name: aks-desktop-linux-${{ matrix.arch }}-proof
           if-no-files-found: error
-          path: linux-proof/*.log
+          retention-days: 7
+          path: |
+            linux-proof
+            test/packaged/test-results
+
+  collect:
+    name: Verify combined unsigned release candidates
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact verifier source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ inputs.aks_plugin_branch }}
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 22.22.2
+
+      - name: Install verifier dependencies without product setup
+        run: |
+          set -euo pipefail
+          npm ci --prefix .config/npm --ignore-scripts --no-audit --no-fund
+          export PATH="$PWD/.config/npm/node_modules/.bin:$PATH"
+          echo "$PWD/.config/npm/node_modules/.bin" >> "$GITHUB_PATH"
+          npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Download both native producers from this run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --name aks-desktop-linux-x64 --dir downloaded-x64
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --name aks-desktop-linux-arm64 --dir downloaded-arm64
+
+      - name: Exercise pre-signing collection and strict combined verification
+        run: |
+          set -euo pipefail
+          mkdir -p collection-proof
+          version="$(node -p "require('./package.json').version")"
+          npm exec -- tsx build/linux-package-verification.ts --dir=downloaded-arm64 --version="$version" --arches=arm64 2>&1 | tee collection-proof/verification.log
+          npm exec -- tsx build/linux-package-verification.ts --stage-from=downloaded-x64 --dir=release-candidate --version="$version" --arches=x64 2>&1 | tee -a collection-proof/verification.log
+          cp "downloaded-arm64/aks-desktop_${version}-1_arm64.deb" release-candidate/
+          cp "downloaded-arm64/aks-desktop-${version}-linux-arm64.tar.gz" release-candidate/
+          npm exec -- tsx build/linux-package-verification.ts --dir=release-candidate --version="$version" --arches=x64,arm64 2>&1 | tee -a collection-proof/verification.log
+          sha256sum release-candidate/* | tee collection-proof/SHA256SUMS
+
+      - name: Upload combined verification evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: linux-release-collection-proof
+          path: collection-proof
+          if-no-files-found: warn
+          retention-days: 7
