@@ -7,9 +7,14 @@ on:
         description: Exact PR 1114 source commit to build
         required: true
         default: 697e0bfd1ce1c903967d1d2ce307ea8c5e676922
+      reuse_installer:
+        description: Test the existing provenance-checked PR installer instead of rebuilding
+        type: boolean
+        default: false
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   installed-arm64:
@@ -58,11 +63,13 @@ jobs:
           cache: npm
 
       - name: Resolve Headlamp Go version
+        if: ${{ !inputs.reuse_installer }}
         id: go-version
         shell: bash
         run: echo "version=$(node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types build/go-version.ts)" >> "$GITHUB_OUTPUT"
 
       - name: Setup Go
+        if: ${{ !inputs.reuse_installer }}
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
         with:
           go-version: ${{ steps.go-version.outputs.version }}
@@ -78,12 +85,47 @@ jobs:
             Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Install dependencies
+        if: ${{ !inputs.reuse_installer }}
         run: npm ci --prefer-offline --no-audit --no-fund
 
+      - name: Install UI test dependencies only
+        if: inputs.reuse_installer
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Download exact existing PR installer
+        if: inputs.reuse_installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $headers = @{
+            Authorization = "Bearer $env:GH_TOKEN"
+            Accept = 'application/vnd.github+json'
+          }
+          $uri = 'https://api.github.com/repos/Azure/aks-desktop/actions/artifacts/13552101566'
+          $metadata = Invoke-RestMethod -Uri $uri -Headers $headers
+          if ($metadata.expired -or $metadata.workflow_run.head_sha -ne $env:EXPECTED_SOURCE_SHA) {
+            throw 'The upstream artifact does not match the reviewed PR source'
+          }
+          $expected = 'sha256:9f4a714c476cdfdafb96c1a97b1d34c691f7a9d43061afa2aa9dbc9f11a0467c'
+          if ($metadata.digest -ne $expected) { throw 'Unexpected upstream artifact digest' }
+          $archive = Join-Path $env:RUNNER_TEMP 'aks-pr1114-installer.zip'
+          Invoke-WebRequest -Uri "$uri/zip" -Headers $headers -OutFile $archive
+          $digest = 'sha256:' + (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($digest -ne $expected) { throw 'Downloaded installer archive failed digest verification' }
+          $dist = Join-Path $PWD 'node_modules/@headlamp-k8s/headlamp-source/source/app/dist'
+          New-Item -ItemType Directory -Force -Path $dist | Out-Null
+          Expand-Archive -LiteralPath $archive -DestinationPath $dist
+          New-Item -ItemType Directory -Force -Path $env:AKS_INSTALL_RESULTS | Out-Null
+          $metadata | ConvertTo-Json -Depth 10 |
+            Set-Content -LiteralPath (Join-Path $env:AKS_INSTALL_RESULTS 'artifact-provenance.json')
+
       - name: Build exact PR Windows ARM64 installer
+        if: ${{ !inputs.reuse_installer }}
         run: npm run build:win:arm64
 
       - name: Validate unpacked application and bundled tools
+        if: ${{ !inputs.reuse_installer }}
         run: npm run test:distribution
 
       - name: Install, validate installed GUI, and uninstall
